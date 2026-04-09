@@ -1,9 +1,19 @@
 <resources>
-
-    <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     </style>
 
+    <style name="BootTheme" parent="Theme.BootSplash">
+        <!-- Make the strict Android 12 Splash elements completely transparent -->
+        <item name="bootSplashBackground">@android:color/transparent</item>
+        <item name="bootSplashLogo">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground">@android:color/transparent</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
+        
+        <!-- Inject our full-screen edge-to-edge drawable behind the transparent Splash Screen API wrapper -->
+        <item name="android:windowBackground">@drawable/bootsplash_fullscreen</item>
+        
+        <item name="postBootSplashTheme">@style/AppTheme</item>
+    </style>
 </resources>
