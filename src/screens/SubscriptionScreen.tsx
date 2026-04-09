@@ -40,7 +40,7 @@ const SUBSCRIPTION_PLANS = [
 ];
 
 const COLORS = {
-  primaryYellow: '#FFB800',
+  primaryYellow: '#FFD54F',
   selectedBg: '#FFF9E6',
   unselectedBorder: '#E0E0E0',
   textDark: '#000000',
@@ -217,7 +217,7 @@ const styles = StyleSheet.create((theme) => ({
   saveTagText: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FFF',
+    color: '#000000ff',
     fontFamily: theme.typography.fontFamily.primary,
   },
   saveTagBadge: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create((theme) => ({
     marginTop: 12,
   },
   selectedPriceText: {
-    color: COLORS.primaryYellow,
+    color: '#000000ff',
   },
   radioContainer: {
     paddingTop: 4,
@@ -282,7 +282,7 @@ const styles = StyleSheet.create((theme) => ({
   payButtonText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#000000ff',
     fontFamily: theme.typography.fontFamily.primary,
   },
 }));

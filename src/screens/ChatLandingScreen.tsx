@@ -34,6 +34,15 @@ const chats = [
   { id: '3', title: 'Health', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Health.png') },
   { id: '4', title: 'Music', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Music.png') },
   { id: '5', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
+  { id: '6', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
+  { id: '7', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
+  { id: '8', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
+  { id: '9', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
+  { id: '10', title: 'Health', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Health.png') },
+  { id: '11', title: 'Music', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Music.png') },
+  { id: '12', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
+  { id: '13', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
+  { id: '14', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
 ];
 
 const ChatLandingScreen = () => {
@@ -42,7 +51,7 @@ const ChatLandingScreen = () => {
   const navigation = useNavigation<any>();
 
   const renderStory = ({ item }: { item: typeof stories[0] }) => (
-    <Box style={styles.storyContainer}>
+    <Pressable style={styles.storyContainer}  onPress={() => navigation.navigate('Subscription')}>
       <Box style={styles.storyRing}>
         
           <Image 
@@ -54,11 +63,13 @@ const ChatLandingScreen = () => {
       
       </Box>
       <Text style={styles.storyTitle}>{item.title}</Text>
-    </Box>
+    </Pressable>
   );
 
   const renderChat = ({ item }: { item: typeof chats[0] }) => (
+     <Pressable onPress={() => navigation.navigate('ChatInterface')}>
     <HStack style={styles.chatContainer}>
+      
       <Image 
         source={item.image} 
         alt={item.title}
@@ -75,6 +86,7 @@ const ChatLandingScreen = () => {
         </HStack>
       </VStack>
     </HStack>
+    </Pressable>
   );
 
   return (
@@ -98,6 +110,7 @@ const ChatLandingScreen = () => {
               keyExtractor={(item) => item.id}
               renderItem={renderStory}
               contentContainerStyle={styles.storiesListContent}
+             
             />
           </Box>
         </Box>
@@ -304,7 +317,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   newChatFab: {
     position: 'absolute',
-    bottom: 202,
+    bottom: 102,
     right: 24,
     width: 60,
     height: 60,

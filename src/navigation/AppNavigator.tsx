@@ -17,7 +17,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Subscription"
+      initialRouteName="Home"
       screenOptions={{
         headerShown: false,
         animation: 'fade',
