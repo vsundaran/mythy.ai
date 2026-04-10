@@ -2,8 +2,11 @@ import React from 'react';
 import {
   ImageBackground,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { signinWithGoogle, configureGoogleSignin } from '../services/auth.service';
 import Svg, { Path, Image as SvgImage } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Box, Text, Pressable, HStack } from '@gluestack-ui/themed';
@@ -15,6 +18,44 @@ const { width } = Dimensions.get('window');
 const HomeScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
+
+  React.useEffect(() => {
+    // Replace with your actual Web Client ID from Google Cloud Console
+    configureGoogleSignin('638374766407-gr74i7rsnmhjsvh9qakrvc6c32u58aln.apps.googleusercontent.com');
+  }, []);
+
+  const handleGoogleSignin = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      const idToken = userInfo.data?.idToken;
+      if (!idToken) {
+        throw new Error('Google Sign-In failed: No ID token');
+      }
+      console.log(idToken, "idToken")
+      const response = await signinWithGoogle(idToken);
+      console.log(response, "response")
+      if (response.success) {
+        console.log('Login Success:', response.data);
+        // Navigate to Chat area
+        navigation.navigate('ChatLanding');
+      } else {
+        Alert.alert('Login Failed', response.message || 'Unknown error');
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        // user cancelled the login flow
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        // operation (e.g. sign in) is in progress already
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert('Error', 'Play services not available or outdated');
+      } else {
+        console.error('Google Sign-In Error:', error);
+        Alert.alert('Error', 'Something went wrong with Google Sign-In');
+      }
+    }
+  };
 
   return (
     <Box style={styles.container}>
@@ -64,7 +105,7 @@ const HomeScreen = ({ navigation }: any) => {
           {/* Bottom Button */}
           <Pressable 
             style={styles.button}
-            onPress={() => navigation.navigate('ChatLanding')}
+            onPress={handleGoogleSignin}
           >
             <Box style={styles.googleIconContainer}>
               <Svg width="24" height="24" viewBox="0 0 48 48">
