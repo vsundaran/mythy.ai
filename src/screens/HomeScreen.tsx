@@ -7,6 +7,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { signinWithGoogle, configureGoogleSignin } from '../services/auth.service';
+import { useAuthStore } from '../store/useAuthStore';
 import Svg, { Path, Image as SvgImage } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Box, Text, Pressable, HStack } from '@gluestack-ui/themed';
@@ -38,6 +39,8 @@ const HomeScreen = ({ navigation }: any) => {
       console.log(response, "response")
       if (response.success) {
         console.log('Login Success:', response.data);
+        const { accessToken, refreshToken, user } = response.data;
+        useAuthStore.getState().setAuth({ accessToken, refreshToken }, user);
         // Navigate to Chat area
         navigation.navigate('ChatLanding');
       } else {

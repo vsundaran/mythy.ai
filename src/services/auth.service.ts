@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-const API_URL = 'http://192.168.1.33:5001/api/v1/auth'; // Update for production
+const API_URL = 'http://172.20.10.12:5001/api/v1/auth'; // Update for production
 
 interface AuthResponse {
   success: boolean;
@@ -13,7 +13,8 @@ interface AuthResponse {
       email: string;
       avatar?: string;
     };
-    token: string;
+    accessToken: string;
+    refreshToken: string;
   };
   error: any;
 }

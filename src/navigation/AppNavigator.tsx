@@ -4,20 +4,25 @@ import HomeScreen from '../screens/HomeScreen';
 import ChatLandingScreen from '../screens/ChatLandingScreen';
 import ChatInterfaceScreen from '../screens/ChatInterfaceScreen';
 import SubscriptionScreen from '../screens/SubscriptionScreen';
+import ProofScreen from '../screens/ProofScreen';
+import { useAuthStore } from '../store/useAuthStore';
 
 export type RootStackParamList = {
   Home: undefined;
   ChatLanding: undefined;
-  ChatInterface: undefined;
+  ChatInterface: { chatId?: string };
   Subscription: undefined;
+  Proof: { url: string, title?: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
+  const authToken = useAuthStore(state => state.authToken);
+
   return (
     <Stack.Navigator
-      initialRouteName="Home"
+      initialRouteName={authToken ? "ChatLanding" : "Home"}
       screenOptions={{
         headerShown: false,
         animation: 'fade',
@@ -27,6 +32,7 @@ const AppNavigator = () => {
       <Stack.Screen name="ChatLanding" component={ChatLandingScreen} />
       <Stack.Screen name="ChatInterface" component={ChatInterfaceScreen} />
       <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+      <Stack.Screen name="Proof" component={ProofScreen} />
     </Stack.Navigator>
   );
 };

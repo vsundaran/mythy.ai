@@ -11,8 +11,11 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { GiftedChat, Bubble, IMessage } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { MoreVertical, Plus, Mic, Play, Send as SendIcon } from 'lucide-react-native';
-import { Box, HStack, Image, Text } from '@gluestack-ui/themed';
+import { MoreVertical, Plus, Mic, Play, Send as SendIcon, ExternalLink } from 'lucide-react-native';
+import { Box, HStack, Image, Text, Spinner, Pressable } from '@gluestack-ui/themed';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { sendChatMessage, fetchChatDetails, IChatResponse, ISource } from '../services/chat.service';
+import { Alert } from 'react-native';
 
 // ─── Waveform component for audio bubbles ─────────────────────────────────────
 const Waveform = () => (
@@ -33,16 +36,14 @@ const Waveform = () => (
 const ChatInterfaceScreen = () => {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  /**
-   * keyboardVisible state drives the toolbar's bottom padding.
-   * When the keyboard is up, we don't need the safe-area bottom inset
-   * because the keyboard already sits on top of the home-indicator area.
-   * When it's hidden we restore the inset so the toolbar clears the home indicator.
-   */
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
+  const route = useRoute<any>();
+  const navigation = useNavigation<any>();
   const inputRef = useRef<TextInput>(null);
 
   // ── Keyboard visibility tracking ──────────────────────────────────────────
@@ -61,72 +62,183 @@ const ChatInterfaceScreen = () => {
     };
   }, []);
 
-  // ── Seed messages ─────────────────────────────────────────────────────────
+  // ── Load Chat History ─────────────────────────────────────────────────────
   useEffect(() => {
-    setMessages([
-      {
-        _id: 8,
-        text: 'okay sure!',
-        createdAt: new Date(new Date().setHours(12, 25, 0)),
-        user: { _id: 1 },
-      },
-      {
-        _id: 7,
-        text: 'Hello! How are you?? Are you available??',
-        createdAt: new Date(new Date().setHours(12, 22, 0)),
-        user: { _id: 2 },
-      },
-      {
-        _id: 5,
-        text: 'Yeah sure! get him too.',
-        createdAt: new Date(new Date().setHours(12, 22, 0)),
-        user: { _id: 2 },
-      },
-      {
-        _id: 4,
-        text: 'Can I also get my cousin along? Will that be okay?',
-        createdAt: new Date(new Date().setHours(12, 20, 0)),
-        user: { _id: 1 },
-      },
-      {
-        _id: 1,
-        text: 'Hey! How have you been?',
-        createdAt: new Date(new Date().setHours(12, 15, 0)),
-        user: { _id: 2 },
-      },
-    ]);
-  }, []);
+    if (route.params?.chatId) {
+      setCurrentChatId(route.params.chatId);
+      loadChatDetails(route.params.chatId);
+    }
+  }, [route.params?.chatId]);
+
+  const loadChatDetails = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const chat = await fetchChatDetails(id);
+      
+      const giftedMessages = chat.messages.map((msg: any) => ({
+        _id: msg._id,
+        text: msg.content,
+        createdAt: new Date(msg.createdAt),
+        user: msg.role === 'user' ? { _id: 1 } : { _id: 2, name: 'Mr Mythy' },
+        aiResponse: msg.metadata || {},
+      }));
+
+      setMessages(giftedMessages.reverse());
+    } catch (error) {
+      console.error('Failed to load chat:', error);
+      Alert.alert('Error', 'Could not load chat history');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const onSend = useCallback((newMessages: IMessage[] = []) => {
-    setMessages(prev => GiftedChat.append(prev, newMessages));
-  }, []);
+  const onSend = useCallback(async (newMessages: IMessage[] = []) => {
+    const userMsg = newMessages[0];
+    setMessages(prev => GiftedChat.append(prev, [userMsg]));
+    
+    try {
+      setIsLoading(true);
+      const apiResponse = await sendChatMessage(userMsg.text, currentChatId);
+      
+      // The API response for 'addMessage/createNewChat' currently returns the WHOLE chat object
+      // or the NEW messages. Let's assume it returns a consistent structure.
+      // Based on previous fixes, it returns the IChat (the whole chat).
+      // Let's extract the last assistant message.
+      const lastMessage = apiResponse.messages[apiResponse.messages.length - 1];
+      
+      const aiMsg: any = {
+        _id: lastMessage._id || Math.random().toString(),
+        text: lastMessage.content,
+        createdAt: new Date(lastMessage.createdAt),
+        user: { _id: 2, name: 'Mr Mythy' },
+        aiResponse: lastMessage.metadata || {},
+      };
+
+      if (!currentChatId) {
+        setCurrentChatId(apiResponse.chatId);
+      }
+
+      setMessages(prev => GiftedChat.append(prev, [aiMsg]));
+    } catch (error) {
+      console.error('Chat error:', error);
+      Alert.alert('Error', 'Failed to get a response from Mr Mythy');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentChatId]);
 
   const handleSend = () => {
-    if (inputText.trim().length === 0) return;
-    onSend([
-      {
-        _id: Math.random().toString(),
-        text: inputText.trim(),
-        createdAt: new Date(),
-        user: { _id: 1 },
-      },
-    ]);
+    if (inputText.trim().length === 0 || isLoading) return;
+    const userMsg: any = {
+      _id: Math.random().toString(),
+      text: inputText.trim(),
+      createdAt: new Date(),
+      user: { _id: 1 },
+    };
+    onSend([userMsg]);
     setInputText('');
   };
 
   // ── Render: Bubble ────────────────────────────────────────────────────────
   const renderBubble = (props: any) => {
-    const isLastInGroup =
-      !props.previousMessage ||
-      props.previousMessage.user?._id !== props.currentMessage.user?._id;
-    const timeString = new Date(props.currentMessage.createdAt).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const { currentMessage } = props;
+    const isAi = currentMessage.user?._id === 2;
+    const aiResponse = currentMessage.aiResponse;
+
+    const getChipStyles = (result: string) => {
+      switch (result) {
+        case 'True': 
+          return { 
+            bg: '#DAF7E1', 
+            primary: '#14603B', 
+            label: 'TRUE' 
+          };
+        case 'False': 
+          return { 
+            bg: '#FEE2E2', 
+            primary: '#B91C1C', 
+            label: 'FALSE' 
+          };
+        case 'Misleading': 
+          return { 
+            bg: '#FEF3C7', 
+            primary: '#B45309', 
+            label: 'MISLEADING' 
+          };
+        default: 
+          return { 
+            bg: '#F3F4F6', 
+            primary: '#4B5563', 
+            label: result.toUpperCase() 
+          };
+      }
+    };
+
+    const handleSourcePress = (sources: ISource[]) => {
+      if (sources.length === 1) {
+        navigation.navigate('Proof', { url: sources[0].url, title: sources[0].title });
+      } else {
+        Alert.alert(
+          'Select Source',
+          'Choose a source to verify',
+          sources.map(s => ({
+            text: s.title,
+            onPress: () => navigation.navigate('Proof', { url: s.url, title: s.title })
+          })).concat([{ text: 'Cancel', style: 'cancel' }])
+        );
+      }
+    };
 
     return (
-      <Box style={{ marginBottom: isLastInGroup ? 8 : 2 }}>
+      <Box style={{ marginBottom: 8 }}>
+        {isAi && aiResponse && aiResponse.result && (
+          <Box paddingHorizontal={12} marginBottom={8}>
+            <HStack space="md" alignItems="center">
+              <HStack 
+                backgroundColor={getChipStyles(aiResponse.result).bg} 
+                paddingHorizontal={12} 
+                paddingVertical={6} 
+                borderRadius={20}
+                borderWidth={1}
+                borderColor={getChipStyles(aiResponse.result).primary}
+                alignItems="center"
+                style={{ gap: 8 }}
+              >
+                {/* Status Dot */}
+                <Box 
+                  width={8} 
+                  height={8} 
+                  borderRadius={4} 
+                  backgroundColor={getChipStyles(aiResponse.result).primary} 
+                />
+                <Text 
+                  color={getChipStyles(aiResponse.result).primary} 
+                  fontWeight="700" 
+                  fontSize={12} 
+                  style={{ letterSpacing: 0.5 }}
+                >
+                  {getChipStyles(aiResponse.result).label}
+                </Text>
+              </HStack>
+              {aiResponse.sources?.length > 0 && (
+                <TouchableOpacity onPress={() => handleSourcePress(aiResponse.sources)}>
+                  <HStack 
+                    space="xs" 
+                    alignItems="center" 
+                    backgroundColor="#F3F4F6" 
+                    paddingHorizontal={10} 
+                    paddingVertical={4} 
+                    borderRadius={16}
+                  >
+                    <ExternalLink size={12} color="#6B7280" />
+                    <Text color="#6B7280" fontSize={12}>Sources</Text>
+                  </HStack>
+                </TouchableOpacity>
+              )}
+            </HStack>
+          </Box>
+        )}
         <Bubble
           {...props}
           renderTime={() => null}
@@ -157,19 +269,6 @@ const ChatInterfaceScreen = () => {
             },
           }}
         />
-        {isLastInGroup && (
-          <Text
-            style={{
-              color: '#6B7280',
-              fontSize: 12,
-              marginTop: 4,
-              alignSelf: props.position === 'right' ? 'flex-end' : 'flex-start',
-              marginHorizontal: 8,
-              fontFamily: theme.typography.fontFamily.primary,
-            }}>
-            {timeString}
-          </Text>
-        )}
       </Box>
     );
   };
@@ -240,8 +339,10 @@ const ChatInterfaceScreen = () => {
 
           <Box width={1} height={24} backgroundColor="#E5E7EB" marginHorizontal={8} />
 
-          <TouchableOpacity style={styles.micButton} onPress={handleSend}>
-            {inputText.trim().length > 0 ? (
+          <TouchableOpacity style={styles.micButton} onPress={handleSend} disabled={isLoading}>
+            {isLoading ? (
+              <Spinner color="#000" size="small" />
+            ) : inputText.trim().length > 0 ? (
               <SendIcon color="#000" size={20} />
             ) : (
               <Mic color="#000" size={20} />
@@ -321,29 +422,36 @@ const ChatInterfaceScreen = () => {
          */
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Box style={styles.chatAreaContainer}>
-          <GiftedChat
-            messages={messages}
-            onSend={(newMessages) => onSend(newMessages)}
-            user={{ _id: 1 }}
-            renderAvatar={() => null}
-            renderBubble={renderBubble}
-            renderInputToolbar={renderInputToolbar}
-            renderCustomView={renderCustomView}
-            // Use 'listProps' as verified in the GiftedChat v3.x source
-            listProps={{
-              // keyboardShouldPersistTaps: 'handled',
-              contentContainerStyle: {
-                flexGrow: 1,
-                justifyContent: 'flex-end',
-              },
-              // keyboardDismissMode: 'interactive',
-            }}
-            messagesContainerStyle={{
-              backgroundColor: '#FFFFFF',
-              paddingBottom: 20,
-              paddingTop: 16,
-            }}
-          />
+          {isLoading && messages.length === 0 ? (
+            <Box flex={1} alignItems="center" justifyContent="center">
+              <Spinner color="#FFD54F" size="large" />
+              <Text marginTop={12} color="#6B7280">Loading conversation...</Text>
+            </Box>
+          ) : (
+            <GiftedChat
+              messages={messages}
+              onSend={(newMessages) => onSend(newMessages)}
+              user={{ _id: 1 }}
+              renderAvatar={() => null}
+              renderBubble={renderBubble}
+              renderInputToolbar={renderInputToolbar}
+              renderCustomView={renderCustomView}
+              // Use 'listProps' as verified in the GiftedChat v3.x source
+              listProps={{
+                // keyboardShouldPersistTaps: 'handled',
+                contentContainerStyle: {
+                  flexGrow: 1,
+                  justifyContent: 'flex-end',
+                },
+                // keyboardDismissMode: 'interactive',
+              }}
+              messagesContainerStyle={{
+                backgroundColor: '#FFFFFF',
+                paddingBottom: 20,
+                paddingTop: 16,
+              }}
+            />
+          )}
         </Box>
       </KeyboardAvoidingView>
     </ImageBackground>

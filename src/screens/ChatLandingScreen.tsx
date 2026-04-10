@@ -16,6 +16,8 @@ import {
   CheckCheck,
   Plus
 } from 'lucide-react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { fetchUserChats, IChat } from '../services/chat.service';
 
 import IconsBackground from '../assets/icons_background.png';
 
@@ -28,27 +30,31 @@ const stories = [
   { id: '5', title: 'Baby', image: require('../assets/Baby.png') },
 ];
 
-const chats = [
-  { id: '1', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
-  { id: '2', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
-  { id: '3', title: 'Health', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Health.png') },
-  { id: '4', title: 'Music', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Music.png') },
-  { id: '5', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
-  { id: '6', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
-  { id: '7', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
-  { id: '8', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
-  { id: '9', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
-  { id: '10', title: 'Health', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Health.png') },
-  { id: '11', title: 'Music', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Music.png') },
-  { id: '12', title: 'Fitness', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Fitness.png') },
-  { id: '13', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
-  { id: '14', title: 'Baby Care', subtitle: 'okay sure!!', time: '12:25 PM', image: require('../assets/Baby.png') },
-];
-
 const ChatLandingScreen = () => {
+  const [chats, setChats] = React.useState<IChat[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
   const navigation = useNavigation<any>();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      loadChats();
+    }, [])
+  );
+
+  const loadChats = async () => {
+    try {
+      setIsLoading(true);
+      const data = await fetchUserChats();
+      setChats(data);
+    } catch (error) {
+      console.error('Failed to load chats:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const renderStory = ({ item }: { item: typeof stories[0] }) => (
     <Pressable style={styles.storyContainer}  onPress={() => navigation.navigate('Subscription')}>
@@ -66,28 +72,37 @@ const ChatLandingScreen = () => {
     </Pressable>
   );
 
-  const renderChat = ({ item }: { item: typeof chats[0] }) => (
-     <Pressable onPress={() => navigation.navigate('ChatInterface')}>
-    <HStack style={styles.chatContainer}>
-      
-      <Image 
-        source={item.image} 
-        alt={item.title}
-        style={styles.chatAvatar}
-      />
-      <VStack style={styles.chatContent}>
-        <HStack style={styles.chatHeader}>
-          <Text style={styles.chatTitle}>{item.title}</Text>
-          <Text style={styles.chatTime}>{item.time}</Text>
+  const renderChat = ({ item }: { item: IChat }) => {
+    const lastMessage = item.messages[item.messages.length - 1];
+    const timeString = new Date(item.updatedAt).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    return (
+      <Pressable onPress={() => navigation.navigate('ChatInterface', { chatId: item.chatId })}>
+        <HStack style={styles.chatContainer}>
+          <Image 
+            source={require('../assets/Music.png')} // Default avatar or use one based on title
+            alt={item.title}
+            style={styles.chatAvatar}
+          />
+          <VStack style={styles.chatContent}>
+            <HStack style={styles.chatHeader}>
+              <Text style={styles.chatTitle} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.chatTime}>{timeString}</Text>
+            </HStack>
+            <HStack style={styles.chatSubtitleRow}>
+              <Text style={styles.chatSubtitle} numberOfLines={1}>
+                {lastMessage?.content || 'No messages yet'}
+              </Text>
+              <CheckCheck color={theme.colors.textSecondary} size={16} />
+            </HStack>
+          </VStack>
         </HStack>
-        <HStack style={styles.chatSubtitleRow}>
-          <Text style={styles.chatSubtitle}>{item.subtitle}</Text>
-          <CheckCheck color={theme.colors.textSecondary} size={16} />
-        </HStack>
-      </VStack>
-    </HStack>
-    </Pressable>
-  );
+      </Pressable>
+    );
+  };
 
   return (
     <Box style={styles.container}>
@@ -122,10 +137,17 @@ const ChatLandingScreen = () => {
         
         <FlatList
           data={chats}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.chatId}
           renderItem={renderChat}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }} // Space for absolute bottom nav
+          contentContainerStyle={{ paddingBottom: 100 }}
+          onRefresh={loadChats}
+          refreshing={isLoading}
+          ListEmptyComponent={
+            <Box style={{ padding: 40, alignItems: 'center' }}>
+              <Text style={{ color: '#9CA3AF' }}>No conversations yet. Ask Mr Mythy!</Text>
+            </Box>
+          }
         />
       </Box>
 
