@@ -127,7 +127,7 @@ const ChatLandingScreen = () => {
               <Text style={styles.chatSubtitle} numberOfLines={1}>
                 {lastMessage?.content || 'No messages yet'}
               </Text>
-              <CheckCheck color={theme.colors.textSecondary} size={16} />
+              {/* <CheckCheck color={theme.colors.textSecondary} size={16} /> */}
             </HStack>
           </VStack>
         </HStack>
@@ -308,21 +308,27 @@ const styles = StyleSheet.create((theme) => ({
     marginBottom: 4,
   },
   chatTitle: {
+    // flex: 1,
+    // marginRight: 8,
     fontSize: 16,
     fontWeight: '700',
     color: '#111827',
+    maxWidth:'80%',
     fontFamily: theme.typography.fontFamily.primary,
   },
   chatTime: {
     fontSize: 12,
     color: '#9CA3AF',
     fontFamily: theme.typography.fontFamily.primary,
+    // marginLeft:7
   },
   chatSubtitleRow: {
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   chatSubtitle: {
+    flex: 1,
+    marginRight: 8,
     fontSize: 14,
     color: '#9CA3AF',
     fontFamily: theme.typography.fontFamily.primary,
