@@ -50,3 +50,11 @@ export const fetchChatDetails = async (chatId: string): Promise<IChat> => {
   }
   throw new Error(response.data.message || 'Failed to fetch chat details');
 };
+
+export const deleteMultipleChats = async (chatIds: string[]): Promise<any> => {
+  const response = await api.delete('/chat', { data: { chatIds } });
+  if (response.data.success) {
+    return response.data.data;
+  }
+  throw new Error(response.data.message || 'Failed to delete chats');
+};

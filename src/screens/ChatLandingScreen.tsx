@@ -2,8 +2,10 @@ import React from 'react';
 import {
   ImageBackground,
   Dimensions,
-  FlatList,
+  Modal,
+  TouchableOpacity,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Box, Text, HStack, VStack, Pressable, Image } from '@gluestack-ui/themed';
@@ -14,12 +16,14 @@ import {
   Search, 
   User, 
   CheckCheck,
-  Plus
+  Plus,
+  Trash2,
+  X
 } from 'lucide-react-native';
 import { IChat } from '../services/chat.service';
 import { ICategory } from '../services/category.service';
 import { useCategories } from '../hooks/useCategories';
-import { useUserChats } from '../hooks/useChats';
+import { useUserChats, useDeleteChats } from '../hooks/useChats';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { 
   Dumbbell01Icon,
@@ -54,10 +58,42 @@ const { width } = Dimensions.get('window');
 const ChatLandingScreen = () => {
   const { data: categories = [] } = useCategories();
   const { data: chats = [], isLoading, refetch, isRefetching } = useUserChats();
+  const { mutateAsync: deleteChatsMutate, isPending: isDeleting } = useDeleteChats();
+
+  const [selectedChats, setSelectedChats] = React.useState<string[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
 
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
   const navigation = useNavigation<any>();
+
+  const handleLongPressChat = (chatId: string) => {
+    if (selectedChats.length === 0) {
+      setSelectedChats([chatId]);
+    }
+  };
+
+  const handlePressChat = (chatId: string) => {
+    if (selectedChats.length > 0) {
+      if (selectedChats.includes(chatId)) {
+        setSelectedChats(prev => prev.filter(id => id !== chatId));
+      } else {
+        setSelectedChats(prev => [...prev, chatId]);
+      }
+    } else {
+      navigation.navigate('ChatInterface', { chatId });
+    }
+  };
+
+  const handleDeleteConfirmed = async () => {
+    try {
+      await deleteChatsMutate(selectedChats);
+      setSelectedChats([]);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to delete chats:', error);
+    }
+  };
 
   const renderCategory = ({ item }: { item: ICategory }) => {
     const IconComponent = IconMap[item.iconName] || SquareIcon;
@@ -82,13 +118,18 @@ const ChatLandingScreen = () => {
     });
 
     const ChatIconComponent = IconMap[item.categoryIcon || 'SquareIcon'] || SquareIcon;
+    const isSelected = selectedChats.includes(item.chatId);
 
     return (
-      <Pressable onPress={() => navigation.navigate('ChatInterface', { chatId: item.chatId })}>
-        <HStack style={styles.chatContainer}>
+      <Pressable 
+        onLongPress={() => handleLongPressChat(item.chatId)}
+        onPress={() => handlePressChat(item.chatId)}
+        delayLongPress={300}
+      >
+        <HStack style={[styles.chatContainer, isSelected && { backgroundColor: 'rgba(255, 213, 79, 0.15)' }]}>
           <Box style={styles.chatAvatarWrapper}>
             <IconPlaceHolder width={60} height={60} style={{ position: 'absolute' }} />
-            <HugeiconsIcon icon={ChatIconComponent} size={30} color="#414141ff" />
+            <HugeiconsIcon icon={ChatIconComponent} size={30} color={isSelected ? "#FFD54F" : "#414141ff"} />
           </Box>
           <VStack style={styles.chatContent}>
             <HStack style={styles.chatHeader}>
@@ -99,7 +140,7 @@ const ChatLandingScreen = () => {
               <Text style={styles.chatSubtitle} numberOfLines={1}>
                 {lastMessage?.content || 'No messages yet'}
               </Text>
-              {/* <CheckCheck color={theme.colors.textSecondary} size={16} /> */}
+              {isSelected && <CheckCheck color="#FFD54F" size={16} />}
             </HStack>
           </VStack>
         </HStack>
@@ -116,19 +157,32 @@ const ChatLandingScreen = () => {
         imageStyle={{ opacity: 1, resizeMode: 'cover' }} // Soft opacity for background doodle
       >
         <Box style={{ paddingTop: insets.top + 20, paddingHorizontal: 24, zIndex: 10 }}>
-          <Text style={styles.greetingText}>
-            Welcome back, <Text style={styles.greetingName}>V Sundaran</Text> 👋
-          </Text>
+          {selectedChats.length > 0 ? (
+            <HStack justifyContent="space-between" alignItems="center" marginBottom={24}>
+              <HStack alignItems="center" space="md">
+                <TouchableOpacity onPress={() => setSelectedChats([])}>
+                  <X color="#FFF" size={24} />
+                </TouchableOpacity>
+                <Text style={styles.greetingName}>{selectedChats.length} Selected</Text>
+              </HStack>
+              <TouchableOpacity onPress={() => setShowDeleteModal(true)}>
+                <Trash2 color="#EF4444" size={24} />
+              </TouchableOpacity>
+            </HStack>
+          ) : (
+            <Text style={styles.greetingText}>
+              Welcome back, <Text style={styles.greetingName}>V Sundaran</Text> 👋
+            </Text>
+          )}
 
           <Box style={styles.storiesWrapper}>
-            <FlatList
+            <FlashList
               horizontal
               showsHorizontalScrollIndicator={false}
               data={categories}
               keyExtractor={(item) => item._id}
               renderItem={renderCategory}
               contentContainerStyle={styles.storiesListContent}
-             
             />
           </Box>
         </Box>
@@ -138,7 +192,7 @@ const ChatLandingScreen = () => {
       <Box style={styles.bottomSheetContainer}>
         <Box style={styles.handleBar} />
         
-        <FlatList
+        <FlashList
           data={chats}
           keyExtractor={(item) => item.chatId}
           renderItem={renderChat}
@@ -161,6 +215,47 @@ const ChatLandingScreen = () => {
       >
         <Plus color="#000000" size={28} strokeWidth={3} />
       </Pressable>
+
+      {/* Custom Theme Delete Modal */}
+      <Modal
+        visible={showDeleteModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeleteModal(false)}
+      >
+        <Box flex={1} backgroundColor="rgba(0,0,0,0.6)" justifyContent="center" alignItems="center" paddingHorizontal={24}>
+          <Box backgroundColor="#1E1E1E" width="100%" borderRadius={24} padding={24} borderWidth={1} borderColor="#333">
+            <HStack alignItems="center" marginBottom={16} space="md">
+              <Box backgroundColor="rgba(239, 68, 68, 0.15)" padding={10} borderRadius={20}>
+                <Trash2 color="#EF4444" size={24} />
+              </Box>
+              <Text fontSize={20} fontWeight="700" color="#FFF" fontFamily={theme.typography.fontFamily.primary}>
+                Delete Chats?
+              </Text>
+            </HStack>
+            <Text color="#D1D5DB" fontSize={14} marginBottom={32} fontFamily={theme.typography.fontFamily.primary}>
+              Are you sure you want to delete {selectedChats.length} conversation{selectedChats.length > 1 ? 's' : ''}? This action cannot be undone.
+            </Text>
+            <HStack space="md" justifyContent="flex-end">
+              <TouchableOpacity 
+                onPress={() => setShowDeleteModal(false)}
+                style={{ paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24, backgroundColor: '#333' }}
+              >
+                <Text color="#FFF" fontWeight="600" fontFamily={theme.typography.fontFamily.primary}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleDeleteConfirmed}
+                disabled={isDeleting}
+                style={{ paddingVertical: 12, paddingHorizontal: 24, borderRadius: 24, backgroundColor: '#EF4444', opacity: isDeleting ? 0.6 : 1 }}
+              >
+                <Text color="#FFF" fontWeight="600" fontFamily={theme.typography.fontFamily.primary}>
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Text>
+              </TouchableOpacity>
+            </HStack>
+          </Box>
+        </Box>
+      </Modal>
 
     </Box>
   );
@@ -190,6 +285,8 @@ const styles = StyleSheet.create((theme) => ({
   },
   storiesWrapper: {
     marginBottom: 40,
+    minHeight: 120, // Required for FlashList
+    width: '100%',
   },
   storiesListContent: {
     paddingRight: 24, // allows scrolling smoothly to end
