@@ -17,6 +17,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { ISource } from '../services/chat.service';
 import { useChatDetails, useSendChatMessage } from '../hooks/useChats';
 import { Alert } from 'react-native';
+import ReactNativeModal from 'react-native-modal';
 
 // ─── Waveform component for audio bubbles ─────────────────────────────────────
 const Waveform = () => (
@@ -39,6 +40,8 @@ const ChatInterfaceScreen = () => {
   const [inputText, setInputText] = useState('');
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [isSourceModalVisible, setIsSourceModalVisible] = useState(false);
+  const [modalSources, setModalSources] = useState<ISource[]>([]);
 
   const { data: chatDetails, isLoading: isChatLoading } = useChatDetails(currentChatId || '');
   const { mutateAsync: sendMessage, isPending: isSending } = useSendChatMessage();
@@ -215,14 +218,8 @@ const ChatInterfaceScreen = () => {
       if (sources.length === 1) {
         navigation.navigate('Proof', { url: sources[0].url, title: sources[0].title });
       } else {
-        Alert.alert(
-          'Select Source',
-          'Choose a source to verify',
-          sources.map(s => ({
-            text: s.title,
-            onPress: () => navigation.navigate('Proof', { url: s.url, title: s.title })
-          })).concat([{ text: 'Cancel', style: 'cancel' }])
-        );
+        setModalSources(sources);
+        setIsSourceModalVisible(true);
       }
     };
 
@@ -491,6 +488,47 @@ const ChatInterfaceScreen = () => {
           )}
         </Box>
       </KeyboardAvoidingView>
+
+      {/* Sources Selection Modal */}
+      <ReactNativeModal
+        isVisible={isSourceModalVisible}
+        onBackdropPress={() => setIsSourceModalVisible(false)}
+        onSwipeComplete={() => setIsSourceModalVisible(false)}
+        swipeDirection={['down']}
+        style={{ justifyContent: 'flex-end', margin: 0 }}
+      >
+        <Box backgroundColor="#1C1C1C" borderTopLeftRadius={24} borderTopRightRadius={24} padding={24}>
+          <Box width={40} height={4} backgroundColor="#333" borderRadius={2} alignSelf="center" marginBottom={24} />
+          <Text fontSize={20} fontWeight="700" color="#FFF" fontFamily={theme.typography.fontFamily.primary} marginBottom={16}>
+            Select Source
+          </Text>
+          {modalSources.map((source, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => {
+                setIsSourceModalVisible(false);
+                setTimeout(() => {
+                  navigation.navigate('Proof', { url: source.url, title: source.title });
+                }, 300);
+              }}
+              style={{
+                paddingVertical: 16,
+                borderBottomWidth: index === modalSources.length - 1 ? 0 : 1,
+                borderBottomColor: '#333'
+              }}
+            >
+              <HStack alignItems="center" justifyContent="space-between">
+                <Text color="#D1D5DB" fontSize={16} fontFamily={theme.typography.fontFamily.primary}>
+                  {source.title}
+                </Text>
+                <ExternalLink size={16} color="#FFD54F" />
+              </HStack>
+            </TouchableOpacity>
+          ))}
+          <Box height={insets.bottom + 16} />
+        </Box>
+      </ReactNativeModal>
+
     </ImageBackground>
   );
 };
