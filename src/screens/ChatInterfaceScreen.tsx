@@ -133,6 +133,49 @@ const ChatInterfaceScreen = () => {
     setInputText('');
   };
 
+  // ── Render: Day Chip ──────────────────────────────────────────────────────
+  const renderDay = (props: any) => {
+    const { currentMessage } = props;
+    if (!currentMessage || !currentMessage.createdAt) return null;
+
+    const date = new Date(currentMessage.createdAt);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let dateString = '';
+    if (date.toDateString() === today.toDateString()) {
+      dateString = 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      dateString = 'Yesterday';
+    } else {
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      dateString = `${day}, ${month}, ${year}`;
+    }
+
+    return (
+      <Box alignItems="center" marginVertical={12}>
+        <Box 
+          backgroundColor="#F3F4F6" 
+          paddingHorizontal={12} 
+          paddingVertical={4} 
+          borderRadius={16}
+        >
+          <Text 
+            fontSize={12} 
+            color="#6B7280" 
+            fontWeight="600" 
+            fontFamily={theme.typography.fontFamily.primary}
+          >
+            {dateString}
+          </Text>
+        </Box>
+      </Box>
+    );
+  };
+
   // ── Render: Bubble ────────────────────────────────────────────────────────
   const renderBubble = (props: any) => {
     const { currentMessage } = props;
@@ -372,7 +415,7 @@ const ChatInterfaceScreen = () => {
               alignItems="center"
               justifyContent="center">
               <Image
-                source={require('../assets/Music.png')}
+                source={require('../assets/logo.png')}
                 alt="Avatar"
                 style={{ width: 48, height: 48, borderRadius: 24 }}
                 resizeMode="cover"
@@ -426,6 +469,7 @@ const ChatInterfaceScreen = () => {
               onSend={(newMessages) => onSend(newMessages)}
               user={{ _id: 1 }}
               renderAvatar={() => null}
+              renderDay={renderDay}
               renderBubble={renderBubble}
               renderInputToolbar={renderInputToolbar}
               renderCustomView={renderCustomView}
