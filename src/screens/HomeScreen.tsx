@@ -6,7 +6,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { signinWithGoogle, configureGoogleSignin } from '../services/auth.service';
+import { configureGoogleSignin } from '../services/auth.service';
+import { useGoogleLogin } from '../hooks/useAuth';
 import { useAuthStore } from '../store/useAuthStore';
 import Svg, { Path, Image as SvgImage } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -19,6 +20,7 @@ const { width } = Dimensions.get('window');
 const HomeScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
+  const { mutateAsync: loginWithGoogle, isPending } = useGoogleLogin();
 
   React.useEffect(() => {
     // Replace with your actual Web Client ID from Google Cloud Console
@@ -35,7 +37,7 @@ const HomeScreen = ({ navigation }: any) => {
         throw new Error('Google Sign-In failed: No ID token');
       }
       console.log(idToken, "idToken")
-      const response = await signinWithGoogle(idToken);
+      const response = await loginWithGoogle(idToken);
       console.log(response, "response")
       if (response.success) {
         console.log('Login Success:', response.data);
@@ -107,8 +109,9 @@ const HomeScreen = ({ navigation }: any) => {
 
           {/* Bottom Button */}
           <Pressable 
-            style={styles.button}
+            style={[styles.button, isPending && { opacity: 0.7 }]}
             onPress={handleGoogleSignin}
+            disabled={isPending}
           >
             <Box style={styles.googleIconContainer}>
               <Svg width="24" height="24" viewBox="0 0 48 48">
@@ -118,7 +121,9 @@ const HomeScreen = ({ navigation }: any) => {
                 <Path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
               </Svg>
             </Box>
-            <Text style={styles.buttonText}>Continue with Google</Text>
+            <Text style={styles.buttonText}>
+              {isPending ? 'Signing in...' : 'Continue with Google'}
+            </Text>
           </Pressable>
         </Box>
       </ImageBackground>

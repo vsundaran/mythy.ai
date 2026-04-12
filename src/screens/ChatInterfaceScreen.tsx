@@ -14,7 +14,8 @@ import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { MoreVertical, Plus, Mic, Play, Send as SendIcon, ExternalLink } from 'lucide-react-native';
 import { Box, HStack, Image, Text, Spinner, Pressable } from '@gluestack-ui/themed';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { sendChatMessage, fetchChatDetails, IChatResponse, ISource } from '../services/chat.service';
+import { ISource } from '../services/chat.service';
+import { useChatDetails, useSendChatMessage } from '../hooks/useChats';
 import { Alert } from 'react-native';
 
 // ─── Waveform component for audio bubbles ─────────────────────────────────────
@@ -36,9 +37,13 @@ const Waveform = () => (
 const ChatInterfaceScreen = () => {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+  const { data: chatDetails, isLoading: isChatLoading } = useChatDetails(currentChatId || '');
+  const { mutateAsync: sendMessage, isPending: isSending } = useSendChatMessage();
+
+  const isLoading = isChatLoading || isSending;
 
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
@@ -66,16 +71,12 @@ const ChatInterfaceScreen = () => {
   useEffect(() => {
     if (route.params?.chatId) {
       setCurrentChatId(route.params.chatId);
-      loadChatDetails(route.params.chatId);
     }
   }, [route.params?.chatId]);
 
-  const loadChatDetails = async (id: string) => {
-    try {
-      setIsLoading(true);
-      const chat = await fetchChatDetails(id);
-      
-      const giftedMessages = chat.messages.map((msg: any) => ({
+  useEffect(() => {
+    if (chatDetails) {
+      const giftedMessages = chatDetails.messages.map((msg: any) => ({
         _id: msg._id,
         text: msg.content,
         createdAt: new Date(msg.createdAt),
@@ -84,13 +85,8 @@ const ChatInterfaceScreen = () => {
       }));
 
       setMessages(giftedMessages.reverse());
-    } catch (error) {
-      console.error('Failed to load chat:', error);
-      Alert.alert('Error', 'Could not load chat history');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [chatDetails]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   const onSend = useCallback(async (newMessages: IMessage[] = []) => {
@@ -98,8 +94,7 @@ const ChatInterfaceScreen = () => {
     setMessages(prev => GiftedChat.append(prev, [userMsg]));
     
     try {
-      setIsLoading(true);
-      const apiResponse = await sendChatMessage(userMsg.text, currentChatId);
+      const apiResponse = await sendMessage({ question: userMsg.text, chatId: currentChatId });
       
       // The API response for 'addMessage/createNewChat' currently returns the WHOLE chat object
       // or the NEW messages. Let's assume it returns a consistent structure.
@@ -123,10 +118,8 @@ const ChatInterfaceScreen = () => {
     } catch (error) {
       console.error('Chat error:', error);
       Alert.alert('Error', 'Failed to get a response from Mr Mythy');
-    } finally {
-      setIsLoading(false);
     }
-  }, [currentChatId]);
+  }, [currentChatId, sendMessage]);
 
   const handleSend = () => {
     if (inputText.trim().length === 0 || isLoading) return;

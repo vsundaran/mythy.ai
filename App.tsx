@@ -18,6 +18,15 @@ import { config } from '@gluestack-ui/config';
 import AppNavigator from './src/navigation/AppNavigator';
 import api from './src/services/api';
 import { useAuthStore } from './src/store/useAuthStore';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+    },
+  },
+});
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -52,16 +61,18 @@ function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <GluestackUIProvider config={config}>
-        <KeyboardProvider>
-          <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-          <NavigationContainer>
-            <AppNavigator />
-          </NavigationContainer>
-        </KeyboardProvider>
-      </GluestackUIProvider>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <GluestackUIProvider config={config}>
+          <KeyboardProvider>
+            <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+            <NavigationContainer>
+              <AppNavigator />
+            </NavigationContainer>
+          </KeyboardProvider>
+        </GluestackUIProvider>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 

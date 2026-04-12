@@ -16,9 +16,10 @@ import {
   CheckCheck,
   Plus
 } from 'lucide-react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { fetchUserChats, IChat } from '../services/chat.service';
-import { fetchCategories, ICategory } from '../services/category.service';
+import { IChat } from '../services/chat.service';
+import { ICategory } from '../services/category.service';
+import { useCategories } from '../hooks/useCategories';
+import { useUserChats } from '../hooks/useChats';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { 
   Dumbbell01Icon,
@@ -51,41 +52,12 @@ const { width } = Dimensions.get('window');
 
 
 const ChatLandingScreen = () => {
-  const [chats, setChats] = React.useState<IChat[]>([]);
-  const [categories, setCategories] = React.useState<ICategory[]>([]);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const { data: categories = [] } = useCategories();
+  const { data: chats = [], isLoading, refetch, isRefetching } = useUserChats();
 
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
   const navigation = useNavigation<any>();
-
-  useFocusEffect(
-    React.useCallback(() => {
-      loadChats();
-      loadCategories();
-    }, [])
-  );
-
-  const loadCategories = async () => {
-    try {
-      const data = await fetchCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    }
-  };
-
-  const loadChats = async () => {
-    try {
-      setIsLoading(true);
-      const data = await fetchUserChats();
-      setChats(data);
-    } catch (error) {
-      console.error('Failed to load chats:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const renderCategory = ({ item }: { item: ICategory }) => {
     const IconComponent = IconMap[item.iconName] || SquareIcon;
@@ -172,8 +144,8 @@ const ChatLandingScreen = () => {
           renderItem={renderChat}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
-          onRefresh={loadChats}
-          refreshing={isLoading}
+          onRefresh={refetch}
+          refreshing={isRefetching || isLoading}
           ListEmptyComponent={
             <Box style={{ padding: 40, alignItems: 'center' }}>
               <Text style={{ color: '#9CA3AF' }}>No conversations yet. Ask Mr Mythy!</Text>
