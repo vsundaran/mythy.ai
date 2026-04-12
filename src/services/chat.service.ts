@@ -21,6 +21,7 @@ export interface IChat {
   chatId: string;
   title: string;
   userId: string;
+  categoryIcon?: string;
   messages: IMessage[];
   createdAt: string;
   updatedAt: string;

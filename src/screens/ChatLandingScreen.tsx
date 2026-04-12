@@ -25,7 +25,10 @@ import {
   MusicNote01Icon,
   HealthIcon,
   Baby01Icon,
-  SquareIcon 
+  SquareIcon,
+  BookOpen01Icon,
+  GlobalIcon,
+  MessageProgrammingIcon
 } from '@hugeicons/core-free-icons';
 import IconPlaceHolder from '../assets/icon_place_holder.svg';
 
@@ -34,6 +37,12 @@ const IconMap: Record<string, any> = {
   MusicNote01Icon,
   HeartBeatIcon: HealthIcon,
   BabyBoyIcon: Baby01Icon,
+  HealthIcon,
+  Baby01Icon,
+  BookOpen01Icon,
+  GlobalIcon,
+  MessageProgrammingIcon,
+  SquareIcon
 };
 
 import IconsBackground from '../assets/icons_background.png';
@@ -100,14 +109,15 @@ const ChatLandingScreen = () => {
       minute: '2-digit',
     });
 
+    const ChatIconComponent = IconMap[item.categoryIcon || 'SquareIcon'] || SquareIcon;
+
     return (
       <Pressable onPress={() => navigation.navigate('ChatInterface', { chatId: item.chatId })}>
         <HStack style={styles.chatContainer}>
-          <Image 
-            source={require('../assets/Music.png')} // Default avatar or use one based on title
-            alt={item.title}
-            style={styles.chatAvatar}
-          />
+          <Box style={styles.chatAvatarWrapper}>
+            <IconPlaceHolder width={60} height={60} style={{ position: 'absolute' }} />
+            <HugeiconsIcon icon={ChatIconComponent} size={30} color="#414141ff" />
+          </Box>
           <VStack style={styles.chatContent}>
             <HStack style={styles.chatHeader}>
               <Text style={styles.chatTitle} numberOfLines={1}>{item.title}</Text>
@@ -279,11 +289,14 @@ const styles = StyleSheet.create((theme) => ({
     borderBottomColor: '#F3F4F6',
     alignItems: 'center',
   },
-  chatAvatar: {
+  chatAvatarWrapper: {
     width: 60,
     height: 60,
     borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 16,
+    overflow: 'hidden',
   },
   chatContent: {
     flex: 1,
