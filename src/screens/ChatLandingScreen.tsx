@@ -18,20 +18,32 @@ import {
 } from 'lucide-react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { fetchUserChats, IChat } from '../services/chat.service';
+import { fetchCategories, ICategory } from '../services/category.service';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { 
+  Dumbbell01Icon,
+  MusicNote01Icon,
+  HealthIcon,
+  Baby01Icon,
+  SquareIcon 
+} from '@hugeicons/core-free-icons';
+import IconPlaceHolder from '../assets/icon_place_holder.svg';
+
+const IconMap: Record<string, any> = {
+  Dumbbell01Icon,
+  MusicNote01Icon,
+  HeartBeatIcon: HealthIcon,
+  BabyBoyIcon: Baby01Icon,
+};
 
 import IconsBackground from '../assets/icons_background.png';
 
 const { width } = Dimensions.get('window');
 
-const stories = [
-  { id: '2', title: 'Fitness', image: require('../assets/Fitness.png') },
-  { id: '3', title: 'Music', image: require('../assets/Music.png') },
-  { id: '4', title: 'Health', image: require('../assets/Health.png') },
-  { id: '5', title: 'Baby', image: require('../assets/Baby.png') },
-];
 
 const ChatLandingScreen = () => {
   const [chats, setChats] = React.useState<IChat[]>([]);
+  const [categories, setCategories] = React.useState<ICategory[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
 
   const insets = useSafeAreaInsets();
@@ -41,8 +53,18 @@ const ChatLandingScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       loadChats();
+      loadCategories();
     }, [])
   );
+
+  const loadCategories = async () => {
+    try {
+      const data = await fetchCategories();
+      setCategories(data);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
 
   const loadChats = async () => {
     try {
@@ -56,22 +78,21 @@ const ChatLandingScreen = () => {
     }
   };
 
-  const renderStory = ({ item }: { item: typeof stories[0] }) => (
-    <Pressable style={styles.storyContainer}  onPress={() => navigation.navigate('Subscription')}>
-      <Box style={styles.storyRing}>
-        
-          <Image 
-            source={item.image} 
-            alt={item.title}
-            style={styles.storyImage} 
-            resizeMode="cover"
-          />
-      
-      </Box>
-      <Text style={styles.storyTitle}>{item.title}</Text>
-    </Pressable>
-  );
+  const renderCategory = ({ item }: { item: ICategory }) => {
+    const IconComponent = IconMap[item.iconName] || SquareIcon;
 
+    return (
+      <Pressable style={styles.storyContainer} onPress={() => navigation.navigate('Subscription')}>
+        <Box style={styles.storyRing}>
+          <Box style={styles.iconWrapper}>
+            <IconPlaceHolder width={64} height={64} style={{ position: 'absolute' }} />
+            <HugeiconsIcon icon={IconComponent} size={32} color="#414141ff" />
+          </Box>
+        </Box>
+        <Text style={styles.storyTitle}>{item.title}</Text>
+      </Pressable>
+    );
+  };
   const renderChat = ({ item }: { item: IChat }) => {
     const lastMessage = item.messages[item.messages.length - 1];
     const timeString = new Date(item.updatedAt).toLocaleTimeString([], {
@@ -121,9 +142,9 @@ const ChatLandingScreen = () => {
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={stories}
-              keyExtractor={(item) => item.id}
-              renderItem={renderStory}
+              data={categories}
+              keyExtractor={(item) => item._id}
+              renderItem={renderCategory}
               contentContainerStyle={styles.storiesListContent}
              
             />
@@ -221,10 +242,13 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  storyImage: {
+  iconWrapper: {
     width: 64,
     height: 64,
     borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
   },
   storyTitle: {
     color: '#FFF',
