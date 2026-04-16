@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
-const API_URL = 'http://172.20.10.12:5001/api/v1/auth'; // Update for production
+import api from './api';
 
 interface AuthResponse {
   success: boolean;
@@ -21,7 +20,7 @@ interface AuthResponse {
 
 export const signinWithGoogle = async (idToken: string): Promise<AuthResponse> => {
   try {
-    const response = await axios.post(`${API_URL}/google`, { idToken });
+    const response = await api.post(`/auth/google`, { idToken });
     return response.data;
   } catch (error: any) {
     if (error.response) {

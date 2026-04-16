@@ -54,9 +54,7 @@ function App() {
     };
 
     init().finally(() => {
-      setTimeout(() => {
         BootSplash.hide({ fade: true });
-      }, 2000);
     });
   }, []);
 
