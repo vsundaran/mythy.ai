@@ -3,7 +3,7 @@ import { useAuthStore } from '../store/useAuthStore';
 
 // Update with your local IP or backend URL
 // const BASE_URL = 'https://app-mythy-api-prod-ins.azurewebsites.net/api/v1'; 
-const BASE_URL = 'http://192.168.1.33:5001/api/v1';
+const BASE_URL = 'http://192.168.1.34:5001/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
@@ -63,6 +63,10 @@ api.interceptors.response.use((response) => {
       clearAuth();
       return Promise.reject(refreshError);
     }
+  } else if (error.response?.status === 401) {
+    // 401 but no refresh token or not first retry
+    console.log('[API Interceptor] Unauthorized access - clearing auth');
+    clearAuth();
   }
 
   console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url}`);

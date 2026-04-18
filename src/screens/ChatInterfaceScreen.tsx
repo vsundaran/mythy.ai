@@ -16,7 +16,7 @@ import { Box, HStack, Image, Text, Spinner, Pressable } from '@gluestack-ui/them
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ISource } from '../services/chat.service';
 import { useChatDetails, useSendChatMessage } from '../hooks/useChats';
-import { Alert } from 'react-native';
+import { useCustomAlert } from '../context/AlertContext';
 import ReactNativeModal from 'react-native-modal';
 
 // ─── Waveform component for audio bubbles ─────────────────────────────────────
@@ -50,6 +50,7 @@ const ChatInterfaceScreen = () => {
 
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
+  const { showAlert } = useCustomAlert();
   const route = useRoute<any>();
   const navigation = useNavigation<any>();
   const inputRef = useRef<TextInput>(null);
@@ -99,10 +100,7 @@ const ChatInterfaceScreen = () => {
     try {
       const apiResponse = await sendMessage({ question: userMsg.text, chatId: currentChatId });
       
-      // The API response for 'addMessage/createNewChat' currently returns the WHOLE chat object
-      // or the NEW messages. Let's assume it returns a consistent structure.
-      // Based on previous fixes, it returns the IChat (the whole chat).
-      // Let's extract the last assistant message.
+      // ... same logic ...
       const lastMessage = apiResponse.messages[apiResponse.messages.length - 1];
       
       const aiMsg: any = {
@@ -118,9 +116,32 @@ const ChatInterfaceScreen = () => {
       }
 
       setMessages(prev => GiftedChat.append(prev, [aiMsg]));
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
-      Alert.alert('Error', 'Failed to get a response from Mr Mythy');
+      
+      // Check for insufficient credits
+      if (error.message === 'INSUFFICIENT_CREDITS' || error?.response?.data?.message === 'INSUFFICIENT_CREDITS') {
+        showAlert({
+          title: 'Out of Credits',
+          message: 'You have exhausted your credits for this month. Please upgrade your plan to continue myth-busting!',
+          buttons: [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Upgrade Now', 
+              onPress: () => navigation.navigate('Subscription'),
+              style: 'default'
+            }
+          ]
+        });
+      } else {
+        showAlert({ 
+          title: 'Error', 
+          message: 'Failed to get a response from Mr Mythy' 
+        });
+      }
+      
+      // Remove the user's message if it failed
+      setMessages(prev => prev.filter(m => m._id !== userMsg._id));
     }
   }, [currentChatId, sendMessage]);
 

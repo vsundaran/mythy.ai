@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -11,33 +11,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft } from 'lucide-react-native';
 import { Box, HStack, VStack, Text } from '@gluestack-ui/themed';
 import { useNavigation } from '@react-navigation/native';
+import RazorpayCheckout from 'react-native-razorpay';
+import { subscriptionService } from '../services/subscription.service';
+import { ActivityIndicator } from 'react-native';
+import { useAuthStore } from '../store/useAuthStore';
+import { useCustomAlert } from '../context/AlertContext';
 
 const { width } = Dimensions.get('window');
 
-const SUBSCRIPTION_PLANS = [
-  {
-    id: '6months',
-    title: '6 months',
-    price: '$5.99/month Premium',
-    description: "You'll begin paying the Regular Plus rate on 19 October 2025 once your current offer expires.",
-    saveTag: 'SAVE 28%',
-    isRecommended: true,
-  },
-  {
-    id: '3months',
-    title: '3 months',
-    price: '$6.99/month',
-    description: "You'll begin paying the Regular Plus rate on 19 July 2025 once your current offer expires.",
-    saveTag: null,
-  },
-  {
-    id: '1months',
-    title: '1 months', // Matching the typo "1 months" in the image exactly if that's what's intended, or fixing it. Let's fix to "1 month" unless pixel perfect means typo too. Image says "1 months".
-    price: '$7.99/month',
-    description: "You'll begin paying the Regular Plus rate on 19 April 2025 once your current offer expires.",
-    saveTag: null,
-  },
-];
+// SUBSCRIPTION_PLANS are now fetched from the database
 
 const COLORS = {
   primaryYellow: '#FFD54F',
@@ -48,7 +30,7 @@ const COLORS = {
 };
 
 interface PlanCardProps {
-  plan: typeof SUBSCRIPTION_PLANS[0];
+  plan: any; // Using dynamic plan from DB
   isSelected: boolean;
   onPress: () => void;
 }
@@ -76,10 +58,16 @@ const PlanCard = ({ plan, isSelected, onPress }: PlanCardProps) => {
             )}
           </HStack>
           
+          <Box mt={4} mb={4}>
+            <Text style={styles.creditText}>
+              {(plan.credits || 0).toLocaleString()} Credits
+            </Text>
+          </Box>
+          
           <Text style={styles.planDescription}>{plan.description}</Text>
           
           <Text style={[styles.planPrice, isSelected && styles.selectedPriceText]}>
-            {plan.price}
+            {plan.priceDisplay}
           </Text>
         </VStack>
 
@@ -102,13 +90,111 @@ const SubscriptionScreen = () => {
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
   const navigation = useNavigation();
+  const { showAlert } = useCustomAlert();
   const [selectedPlanId, setSelectedPlanId] = useState('6months');
+  const [plans, setPlans] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const user = useAuthStore((state) => state.user);
+
+  useEffect(() => {
+    fetchPlans();
+  }, []);
+
+  const fetchPlans = async () => {
+    try {
+      const fetchedPlans = await subscriptionService.getPlans();
+      setPlans(fetchedPlans);
+      
+      // Select the recommended plan by default if it exists
+      const recommendedPlan = fetchedPlans.find(p => p.isRecommended);
+      if (recommendedPlan) {
+        setSelectedPlanId(recommendedPlan.planId);
+      } else if (fetchedPlans.length > 0) {
+        setSelectedPlanId(fetchedPlans[0].planId);
+      }
+    } catch (error) {
+      console.error('Failed to fetch plans', error);
+      showAlert({ 
+        title: 'Error', 
+        message: 'Failed to load subscription plans. Please try again later.' 
+      });
+    }
+  };
 
   const handleBack = () => {
     if(navigation.canGoBack()) {
       navigation.goBack();
     }else{
       navigation.navigate('Home');
+    }
+  };
+
+  const handlePayment = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      // 1. Create Order on Backend
+      const orderData = await subscriptionService.createOrder(selectedPlanId);
+      
+      const options = {
+        description: `Subscription for ${selectedPlanId}`,
+        image: 'https://i.imgur.com/3g7nmJC.png', // Fallback icon
+        currency: orderData.currency,
+        key: orderData.key,
+        amount: orderData.amount,
+        name: 'Mythy App',
+        order_id: orderData.id,
+        prefill: {
+          email: user?.email || '',
+          contact: '',
+          name: user?.name || '',
+        },
+        theme: { color: COLORS.primaryYellow },
+      };
+
+      // 2. Open Razorpay Checkout
+      RazorpayCheckout.open(options)
+        .then(async (data: any) => {
+          // 3. Verify Payment on Backend
+          try {
+            await subscriptionService.verifyPayment({
+              razorpayOrderId: data.razorpay_order_id,
+              razorpayPaymentId: data.razorpay_payment_id,
+              razorpaySignature: data.razorpay_signature,
+            });
+            showAlert({ 
+              title: 'Success', 
+              message: 'Subscription activated successfully!',
+              buttons: [{ text: 'Great!', onPress: () => navigation.navigate('ChatLanding') }]
+            });
+          } catch (verifyError) {
+            console.error('Verification failed', verifyError);
+            showAlert({ 
+              title: 'Error', 
+              message: 'Payment verification failed. Please contact support.' 
+            });
+          } finally {
+            setIsLoading(false);
+          }
+        })
+        .catch((error: any) => {
+          setIsLoading(false);
+          console.log('Razorpay Error: ', error);
+          if (error.code !== 2) { // 2 is user cancelled
+             showAlert({ 
+               title: 'Error', 
+               message: `Payment failed: ${error.description}` 
+             });
+          }
+        });
+    } catch (error: any) {
+      setIsLoading(false);
+      console.error('Order creation failed', error);
+      showAlert({ 
+        title: 'Error', 
+        message: 'Failed to initiate payment. Please try again.' 
+      });
     }
   };
 
@@ -140,21 +226,32 @@ const SubscriptionScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <VStack space="md" px={24}>
-          {SUBSCRIPTION_PLANS.map((plan) => (
+          {plans.map((plan) => (
             <PlanCard
-              key={plan.id}
+              key={plan._id}
               plan={plan}
-              isSelected={selectedPlanId === plan.id}
-              onPress={() => setSelectedPlanId(plan.id)}
+              isSelected={selectedPlanId === plan.planId}
+              onPress={() => setSelectedPlanId(plan.planId)}
             />
           ))}
+          {plans.length === 0 && !isLoading && (
+             <ActivityIndicator color={COLORS.primaryYellow} size="large" style={{ marginTop: 50 }} />
+          )}
         </VStack>
       </ScrollView>
 
       {/* Bottom Button */}
       <Box px={24} pb={insets.bottom + 20} pt={10}>
-        <TouchableOpacity style={styles.payButton}>
-          <Text style={styles.payButtonText}>Pay now</Text>
+        <TouchableOpacity 
+          style={[styles.payButton, isLoading && styles.disabledButton]} 
+          onPress={handlePayment}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#000" />
+          ) : (
+            <Text style={styles.payButtonText}>Pay now</Text>
+          )}
         </TouchableOpacity>
       </Box>
     </Box>
@@ -227,6 +324,12 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: 20,
     marginLeft: 10,
   },
+  creditText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textGray,
+    fontFamily: theme.typography.fontFamily.primary,
+  },
   planDescription: {
     fontSize: 13,
     color: COLORS.textGray,
@@ -284,6 +387,9 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: '600',
     color: '#000000ff',
     fontFamily: theme.typography.fontFamily.primary,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 }));
 

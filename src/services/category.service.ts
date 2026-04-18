@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
+import api from './api';
 
-const API_URL = Platform.OS === 'android' ? 'http://192.168.1.33:5001/api/v1' : 'http://localhost:3000/api/v1';
+const API_URL =  api.defaults.baseURL;
 
 export interface ICategory {
   _id: string;
@@ -12,7 +13,7 @@ export interface ICategory {
 
 export const fetchCategories = async (): Promise<ICategory[]> => {
   try {
-    const response = await axios.get(`${API_URL}/categories`);
+    const response = await api.get(`/categories`);
     if (response.data && response.data.success) {
       return response.data.data;
     }

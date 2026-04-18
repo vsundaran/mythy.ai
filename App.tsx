@@ -19,6 +19,8 @@ import AppNavigator from './src/navigation/AppNavigator';
 import api from './src/services/api';
 import { useAuthStore } from './src/store/useAuthStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AlertProvider } from './src/context/AlertContext';
+import AlertModal from './src/components/ui/AlertModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,12 +64,15 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <GluestackUIProvider config={config}>
-          <KeyboardProvider>
-            <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
-            <NavigationContainer>
-              <AppNavigator />
-            </NavigationContainer>
-          </KeyboardProvider>
+          <AlertProvider>
+            <KeyboardProvider>
+              <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
+              <NavigationContainer>
+                <AppNavigator />
+              </NavigationContainer>
+              <AlertModal />
+            </KeyboardProvider>
+          </AlertProvider>
         </GluestackUIProvider>
       </SafeAreaProvider>
     </QueryClientProvider>

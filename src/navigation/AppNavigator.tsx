@@ -22,17 +22,23 @@ const AppNavigator = () => {
 
   return (
     <Stack.Navigator
-      initialRouteName={authToken ? "ChatLanding" : "Home"}
       screenOptions={{
         headerShown: false,
         animation: 'fade',
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="ChatLanding" component={ChatLandingScreen} />
-      <Stack.Screen name="ChatInterface" component={ChatInterfaceScreen} />
-      <Stack.Screen name="Subscription" component={SubscriptionScreen} />
-      <Stack.Screen name="Proof" component={ProofScreen} />
+      {!authToken ? (
+        // Guest Stack
+        <Stack.Screen name="Home" component={HomeScreen} />
+      ) : (
+        // Auth Stack
+        <>
+          <Stack.Screen name="ChatLanding" component={ChatLandingScreen} />
+          <Stack.Screen name="ChatInterface" component={ChatInterfaceScreen} />
+          <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+          <Stack.Screen name="Proof" component={ProofScreen} />
+        </>
+      )}
     </Stack.Navigator>
   );
 };

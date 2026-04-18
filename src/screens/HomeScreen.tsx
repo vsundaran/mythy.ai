@@ -2,9 +2,9 @@ import React from 'react';
 import {
   ImageBackground,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useCustomAlert } from '../context/AlertContext';
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { configureGoogleSignin } from '../services/auth.service';
 import { useGoogleLogin } from '../hooks/useAuth';
@@ -20,6 +20,7 @@ const { width } = Dimensions.get('window');
 const HomeScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
+  const { showAlert } = useCustomAlert();
   const { mutateAsync: loginWithGoogle, isPending } = useGoogleLogin();
 
   React.useEffect(() => {
@@ -46,7 +47,7 @@ const HomeScreen = ({ navigation }: any) => {
         // Navigate to Chat area
         navigation.navigate('ChatLanding');
       } else {
-        Alert.alert('Login Failed', response.message || 'Unknown error');
+        showAlert({ title: 'Login Failed', message: response.message || 'Unknown error' });
       }
     } catch (error: any) {
       if (error.code === statusCodes.SIGN_IN_CANCELLED) {
@@ -54,10 +55,10 @@ const HomeScreen = ({ navigation }: any) => {
       } else if (error.code === statusCodes.IN_PROGRESS) {
         // operation (e.g. sign in) is in progress already
       } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert('Error', 'Play services not available or outdated');
+        showAlert({ title: 'Error', message: 'Play services not available or outdated' });
       } else {
         console.error('Google Sign-In Error:', error);
-        Alert.alert('Error', 'Something went wrong with Google Sign-In');
+        showAlert({ title: 'Error', message: 'Something went wrong with Google Sign-In' });
       }
     }
   };
