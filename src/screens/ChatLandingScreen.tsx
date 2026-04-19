@@ -25,30 +25,10 @@ import { ICategory } from '../services/category.service';
 import { useCategories } from '../hooks/useCategories';
 import { useUserChats, useDeleteChats } from '../hooks/useChats';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { 
-  Dumbbell01Icon,
-  MusicNote01Icon,
-  HealthIcon,
-  Baby01Icon,
-  SquareIcon,
-  BookOpen01Icon,
-  GlobalIcon,
-  MessageProgrammingIcon
-} from '@hugeicons/core-free-icons';
+import * as Icons from '@hugeicons/core-free-icons';
 import IconPlaceHolder from '../assets/icon_place_holder.svg';
 
-const IconMap: Record<string, any> = {
-  Dumbbell01Icon,
-  MusicNote01Icon,
-  HeartBeatIcon: HealthIcon,
-  BabyBoyIcon: Baby01Icon,
-  HealthIcon,
-  Baby01Icon,
-  BookOpen01Icon,
-  GlobalIcon,
-  MessageProgrammingIcon,
-  SquareIcon
-};
+
 
 import IconsBackground from '../assets/icons_background.png';
 
@@ -96,17 +76,19 @@ const ChatLandingScreen = () => {
   };
 
   const renderCategory = ({ item }: { item: ICategory }) => {
-    const IconComponent = IconMap[item.iconName] || SquareIcon;
+    if (!item) return null;
+    const IconComponent = (Icons as any)[item.iconName] || Icons.SquareIcon;
 
     return (
+      
       <Pressable style={styles.storyContainer} onPress={() => navigation.navigate('Subscription')}>
         <Box style={styles.storyRing}>
           <Box style={styles.iconWrapper}>
-            <IconPlaceHolder width={64} height={64} style={{ position: 'absolute' }} />
-            <HugeiconsIcon icon={IconComponent} size={32} color="#414141ff" />
+            {/* <IconPlaceHolder width={64} height={64} style={{ position: 'absolute' }} /> */}
+            <HugeiconsIcon icon={IconComponent} size={32} color="#000000ff" />
           </Box>
         </Box>
-        <Text style={styles.storyTitle}>{item.title}</Text>
+        {/* <Text style={styles.storyTitle}>{item.title}</Text> */}
       </Pressable>
     );
   };
@@ -117,7 +99,7 @@ const ChatLandingScreen = () => {
       minute: '2-digit',
     });
 
-    const ChatIconComponent = IconMap[item.categoryIcon || 'SquareIcon'] || SquareIcon;
+    const ChatIconComponent = (Icons as any)[item.categoryIcon || 'SquareIcon'] || Icons.SquareIcon;
     const isSelected = selectedChats.includes(item.chatId);
 
     return (
@@ -180,7 +162,7 @@ const ChatLandingScreen = () => {
               horizontal
               showsHorizontalScrollIndicator={false}
               data={categories}
-              keyExtractor={(item) => item._id}
+              // keyExtractor={(item) => item?._id || Math.random().toString()}
               renderItem={renderCategory}
               contentContainerStyle={styles.storiesListContent}
             />
@@ -328,6 +310,7 @@ const styles = StyleSheet.create((theme) => ({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    backgroundColor: '#FFD54F'
   },
   storyTitle: {
     color: '#FFF',
