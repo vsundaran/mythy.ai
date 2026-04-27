@@ -41,3 +41,37 @@ export const configureGoogleSignin = (webClientId: string) => {
     offlineAccess: true,
   });
 };
+
+export const getMe = async () => {
+  try {
+    const response = await api.get(`/auth/me`);
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: 'Network error',
+      data: null,
+      error: { reason: 'Could not connect to server' },
+    };
+  }
+};
+
+export const updateUserName = async (name: string) => {
+  try {
+    const response = await api.patch('/auth/update-name', { name });
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: 'Network error',
+      data: null,
+      error: { reason: 'Could not connect to server' },
+    };
+  }
+};

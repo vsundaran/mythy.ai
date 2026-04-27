@@ -18,12 +18,14 @@ import {
   CheckCheck,
   Plus,
   Trash2,
-  X
+  X,
+  MoreVertical
 } from 'lucide-react-native';
 import { IChat } from '../services/chat.service';
 import { ICategory } from '../services/category.service';
 import { useCategories } from '../hooks/useCategories';
 import { useUserChats, useDeleteChats } from '../hooks/useChats';
+import { useUserProfile } from '../hooks/useAuth';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import * as Icons from '@hugeicons/core-free-icons';
 import IconPlaceHolder from '../assets/icon_place_holder.svg';
@@ -39,7 +41,9 @@ const ChatLandingScreen = () => {
   const { data: categories = [] } = useCategories();
   const { data: chats = [], isLoading, refetch, isRefetching } = useUserChats();
   const { mutateAsync: deleteChatsMutate, isPending: isDeleting } = useDeleteChats();
-
+  const { data: userProfileData } = useUserProfile();
+  
+  const userProfile = userProfileData;
   const [selectedChats, setSelectedChats] = React.useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = React.useState(false);
 
@@ -77,7 +81,7 @@ const ChatLandingScreen = () => {
 
   const renderCategory = ({ item }: { item: ICategory }) => {
     if (!item) return null;
-    const IconComponent = (Icons as any)[item.iconName] || Icons.SquareIcon;
+    const IconComponent = (Icons as any)[item.iconName] || Icons.AiBrain04Icon;
 
     return (
       
@@ -88,7 +92,7 @@ const ChatLandingScreen = () => {
             <HugeiconsIcon icon={IconComponent} size={32} color="#000000ff" />
           </Box>
         </Box>
-        {/* <Text style={styles.storyTitle}>{item.title}</Text> */}
+        <Text style={styles.storyTitle}>{item.title}</Text>
       </Pressable>
     );
   };
@@ -99,7 +103,7 @@ const ChatLandingScreen = () => {
       minute: '2-digit',
     });
 
-    const ChatIconComponent = (Icons as any)[item.categoryIcon || 'SquareIcon'] || Icons.SquareIcon;
+    const ChatIconComponent = (Icons as any)[item.categoryIcon || 'AiBrain04Icon'] || Icons.AiBrain04Icon;
     const isSelected = selectedChats.includes(item.chatId);
 
     return (
@@ -110,8 +114,8 @@ const ChatLandingScreen = () => {
       >
         <HStack style={[styles.chatContainer, isSelected && { backgroundColor: 'rgba(255, 213, 79, 0.15)' }]}>
           <Box style={styles.chatAvatarWrapper}>
-            <IconPlaceHolder width={60} height={60} style={{ position: 'absolute' }} />
-            <HugeiconsIcon icon={ChatIconComponent} size={30} color={isSelected ? "#FFD54F" : "#414141ff"} />
+            {/* <IconPlaceHolder width={60} height={60} style={{ position: 'absolute' }} /> */}
+            <HugeiconsIcon icon={ChatIconComponent} size={30} color={"#000000ff"} />
           </Box>
           <VStack style={styles.chatContent}>
             <HStack style={styles.chatHeader}>
@@ -122,7 +126,6 @@ const ChatLandingScreen = () => {
               <Text style={styles.chatSubtitle} numberOfLines={1}>
                 {lastMessage?.content || 'No messages yet'}
               </Text>
-              {isSelected && <CheckCheck color="#FFD54F" size={16} />}
             </HStack>
           </VStack>
         </HStack>
@@ -153,7 +156,7 @@ const ChatLandingScreen = () => {
             </HStack>
           ) : (
             <Text style={styles.greetingText}>
-              Welcome back, <Text style={styles.greetingName}>V Sundaran</Text> 👋
+              Welcome back, <Text style={styles.greetingName}>{userProfile?.name || 'User'}</Text> 👋
             </Text>
           )}
 
@@ -179,7 +182,7 @@ const ChatLandingScreen = () => {
           keyExtractor={(item) => item.chatId}
           renderItem={renderChat}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingBottom: 120 }}
           onRefresh={refetch}
           refreshing={isRefetching || isLoading}
           ListEmptyComponent={
@@ -349,6 +352,7 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: 'center',
     marginRight: 16,
     overflow: 'hidden',
+    backgroundColor:'#FFD54F'
   },
   chatContent: {
     flex: 1,
@@ -385,56 +389,9 @@ const styles = StyleSheet.create((theme) => ({
     color: '#9CA3AF',
     fontFamily: theme.typography.fontFamily.primary,
   },
-  bottomNavContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: '#FFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  bottomNavInner: {
-    height: 60,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  navItemSpace: {
-    flex: 1,
-  },
-  navText: {
-    fontSize: 10,
-    marginTop: 4,
-    color: theme.colors.textSecondary,
-    fontFamily: theme.typography.fontFamily.primary,
-  },
-  fab: {
-    position: 'absolute',
-    top: -24,
-    alignSelf: 'center',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#FFD54F',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 4.65,
-    elevation: 8,
-  },
   newChatFab: {
     position: 'absolute',
-    bottom: 102,
+    bottom: 120,
     right: 24,
     width: 60,
     height: 60,

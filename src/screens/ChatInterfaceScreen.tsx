@@ -18,6 +18,8 @@ import { ISource } from '../services/chat.service';
 import { useChatDetails, useSendChatMessage } from '../hooks/useChats';
 import { useCustomAlert } from '../context/AlertContext';
 import ReactNativeModal from 'react-native-modal';
+import { HugeiconsIcon } from '@hugeicons/react-native';
+import { AiBrain04Icon } from '@hugeicons/core-free-icons';
 
 // ─── Waveform component for audio bubbles ─────────────────────────────────────
 const Waveform = () => (
@@ -432,12 +434,13 @@ const ChatInterfaceScreen = () => {
               backgroundColor="#FFD54F"
               alignItems="center"
               justifyContent="center">
-              <Image
+              <HugeiconsIcon icon={AiBrain04Icon} size={32} color="#000000ff" />
+              {/* <Image
                 source={require('../assets/logo.png')}
                 alt="Avatar"
                 style={{ width: 48, height: 48, borderRadius: 24 }}
                 resizeMode="cover"
-              />
+              /> */}
             </Box>
 
             <Box marginLeft={12}>
@@ -445,10 +448,6 @@ const ChatInterfaceScreen = () => {
               <Text style={styles.headerSubtitle}>Online</Text>
             </Box>
           </HStack>
-
-          <TouchableOpacity>
-            <MoreVertical color="#FFFFFF" size={28} />
-          </TouchableOpacity>
         </HStack>
       </Box>
 

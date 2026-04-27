@@ -11,6 +11,8 @@ export type AlertConfig = {
   message?: string;
   buttons?: AlertButton[];
   type?: 'success' | 'error' | 'warning' | 'info';
+  icon?: React.ReactNode;
+  iconColor?: string;
 };
 
 interface AlertContextData {

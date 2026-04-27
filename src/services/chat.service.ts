@@ -58,3 +58,11 @@ export const deleteMultipleChats = async (chatIds: string[]): Promise<any> => {
   }
   throw new Error(response.data.message || 'Failed to delete chats');
 };
+
+export const deleteAllUserChats = async (): Promise<any> => {
+  const response = await api.delete('/chat/all');
+  if (response.data.success) {
+    return response.data.data;
+  }
+  throw new Error(response.data.message || 'Failed to delete all chats');
+};

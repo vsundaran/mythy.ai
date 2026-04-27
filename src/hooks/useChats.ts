@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchUserChats, fetchChatDetails, sendChatMessage, deleteMultipleChats, IChat } from '../services/chat.service';
+import { fetchUserChats, fetchChatDetails, sendChatMessage, deleteMultipleChats, deleteAllUserChats, IChat } from '../services/chat.service';
 
 export const useUserChats = () => {
   return useQuery<IChat[], Error>({
@@ -39,6 +39,17 @@ export const useDeleteChats = () => {
 
   return useMutation({
     mutationFn: (chatIds: string[]) => deleteMultipleChats(chatIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+    },
+  });
+};
+
+export const useDeleteAllChats = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => deleteAllUserChats(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chats'] });
     },

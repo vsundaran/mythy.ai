@@ -21,6 +21,7 @@ import { useAuthStore } from './src/store/useAuthStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AlertProvider } from './src/context/AlertContext';
 import AlertModal from './src/components/ui/AlertModal';
+import { Text } from 'react-native-gesture-handler';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -71,6 +72,7 @@ function App() {
                 <AppNavigator />
               </NavigationContainer>
               <AlertModal />
+              {/* <Text>Hello</Text> */}
             </KeyboardProvider>
           </AlertProvider>
         </GluestackUIProvider>
