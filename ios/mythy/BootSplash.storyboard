@@ -17,36 +17,18 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <!-- Start: Icons Background (Edge-to-Edge) -->
-                            <imageView autoresizesSubviews="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleToFill" image="BootSplashIconsBg" translatesAutoresizingMaskIntoConstraints="NO" id="iconsBgView">
-                                <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                            <imageView autoresizesSubviews="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="BootSplashLogo-741fdf" translatesAutoresizingMaskIntoConstraints="NO" id="3lX-Ut-9ad">
+                                <rect key="frame" x="17.5" y="198" width="340" height="271"/>
                                 <accessibility key="accessibilityConfiguration">
                                     <accessibilityTraits key="traits" image="YES" notEnabled="YES"/>
                                 </accessibility>
                             </imageView>
-                            <!-- End: Icons Background -->
-
-                            <!-- Start: Home Banner (Centered) -->
-                            <imageView autoresizesSubviews="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" image="BootSplashHomeBanner" translatesAutoresizingMaskIntoConstraints="NO" id="bannerView">
-                                <rect key="frame" x="48" y="221" width="279" height="225"/>
-                                <accessibility key="accessibilityConfiguration">
-                                    <accessibilityTraits key="traits" image="YES" notEnabled="YES"/>
-                                </accessibility>
-                            </imageView>
-                            <!-- End: Home Banner -->
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="Bcu-3y-fUS"/>
-                        <color key="backgroundColor" name="BootSplashBackground-c4fe23"/>
+                        <color key="backgroundColor" name="BootSplashBackground-741fdf"/>
                         <constraints>
-                            <constraint firstItem="iconsBgView" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="icons-top-constraint"/>
-                            <constraint firstItem="iconsBgView" firstAttribute="bottom" secondItem="Ze5-6b-2t3" secondAttribute="bottom" id="icons-bottom-constraint"/>
-                            <constraint firstItem="iconsBgView" firstAttribute="leading" secondItem="Ze5-6b-2t3" secondAttribute="leading" id="icons-leading-constraint"/>
-                            <constraint firstItem="iconsBgView" firstAttribute="trailing" secondItem="Ze5-6b-2t3" secondAttribute="trailing" id="icons-trailing-constraint"/>
-                            
-                            <constraint firstItem="bannerView" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="banner-centerx-constraint"/>
-                            <constraint firstItem="bannerView" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="banner-centery-constraint"/>
-                            <constraint firstItem="bannerView" firstAttribute="width" constant="340" id="banner-width-constraint"/>
-                            <constraint firstItem="bannerView" firstAttribute="height" constant="274" id="banner-height-constraint"/>
+                            <constraint firstItem="3lX-Ut-9ad" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="Fh9-Fy-1nT"/>
+                            <constraint firstItem="3lX-Ut-9ad" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="nvB-Ic-PnI"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -56,10 +38,9 @@
         </scene>
     </scenes>
     <resources>
-        <image name="BootSplashIconsBg" width="750" height="1624"/>
-        <image name="BootSplashHomeBanner" width="279" height="225"/>
-        <namedColor name="BootSplashBackground-c4fe23">
-            <color red="0.0" green="0.0" blue="0.0" alpha="1.0" colorSpace="custom" customColorSpace="sRGB"/>
+        <image name="BootSplashLogo-741fdf" width="340" height="271"/>
+        <namedColor name="BootSplashBackground-741fdf">
+            <color red="0.00000000000000" green="0.00000000000000" blue="0.00000000000000" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>
     </resources>
 </document>

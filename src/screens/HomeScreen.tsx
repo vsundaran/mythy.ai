@@ -13,7 +13,7 @@ import Svg, { Path, Image as SvgImage } from 'react-native-svg';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { Box, Text, Pressable, HStack } from '@gluestack-ui/themed';
 
-import IconsBackground from '../../assets/icons_background.png';
+import IconsBackground from '../assets/icons_background.png';
 
 const { width } = Dimensions.get('window');
 
@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }: any) => {
           <Box style={styles.bannerContainer}>
             <Svg width={width * 0.85} height={width * 0.85}>
               <SvgImage
-                href={require('../../assets/Home_Banner.png')}
+                href={require('../assets/Home_Banner.png')}
                 width="100%"
                 height="100%"
                 preserveAspectRatio="xMidYMid meet"

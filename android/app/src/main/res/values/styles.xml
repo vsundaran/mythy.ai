@@ -5,15 +5,12 @@
     </style>
 
     <style name="BootTheme" parent="Theme.BootSplash">
-        <!-- Make the strict Android 12 Splash elements completely transparent -->
-        <item name="bootSplashBackground">@android:color/transparent</item>
-        <item name="bootSplashLogo">@android:color/transparent</item>
         <item name="android:windowSplashScreenBackground">@android:color/transparent</item>
         <item name="android:windowSplashScreenAnimatedIcon">@android:color/transparent</item>
-        
-        <!-- Inject our full-screen edge-to-edge drawable behind the transparent Splash Screen API wrapper -->
         <item name="android:windowBackground">@drawable/bootsplash_fullscreen</item>
-        
+
+        <item name="bootSplashBackground">@color/bootsplash_background</item>
+        <item name="bootSplashLogo">@drawable/bootsplash_logo</item>
         <item name="postBootSplashTheme">@style/AppTheme</item>
     </style>
 </resources>

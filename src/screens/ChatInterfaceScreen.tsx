@@ -11,7 +11,7 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { GiftedChat, Bubble, IMessage } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { MoreVertical, Plus, Mic, Play, Send as SendIcon, ExternalLink } from 'lucide-react-native';
+import { MoreVertical, Play, Send as SendIcon, ExternalLink } from 'lucide-react-native';
 import { Box, HStack, Image, Text, Spinner, Pressable } from '@gluestack-ui/themed';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ISource } from '../services/chat.service';
@@ -375,11 +375,10 @@ const ChatInterfaceScreen = () => {
           borderColor="#E5E7EB"
           backgroundColor="#FFFFFF"
           alignItems="center"
-          paddingHorizontal={4}
+          paddingLeft={16}
+          paddingRight={4}
           paddingVertical={4}>
-          <TouchableOpacity style={styles.plusButton}>
-            <Plus color="#000" size={24} />
-          </TouchableOpacity>
+
 
           <TextInput
             ref={inputRef}
@@ -393,15 +392,13 @@ const ChatInterfaceScreen = () => {
             blurOnSubmit={false}
           />
 
-          <Box width={1} height={24} backgroundColor="#E5E7EB" marginHorizontal={8} />
 
-          <TouchableOpacity style={styles.micButton} onPress={handleSend} disabled={isLoading}>
+
+          <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isLoading}>
             {isLoading ? (
               <Spinner color="#000" size="small" />
-            ) : inputText.trim().length > 0 ? (
-              <SendIcon color="#000" size={20} />
             ) : (
-              <Mic color="#000" size={20} />
+              <SendIcon color="#000" size={20} />
             )}
           </TouchableOpacity>
         </HStack>
@@ -586,15 +583,7 @@ const styles = StyleSheet.create((theme) => ({
     // Explicit height prevents Android text input from collapsing
     minHeight: 44,
   },
-  plusButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFD54F',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  micButton: {
+  sendButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
