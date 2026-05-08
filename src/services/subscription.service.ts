@@ -17,6 +17,7 @@ export interface SubscriptionPlan {
   saveTag?: string;
   isRecommended: boolean;
   durationInMonths: number;
+  credits: number;
 }
 
 export const subscriptionService = {
@@ -36,6 +37,11 @@ export const subscriptionService = {
     razorpaySignature: string;
   }) => {
     const response = await api.post('/subscription/verify-payment', paymentData);
+    return response.data.data;
+  },
+
+  getHistory: async () => {
+    const response = await api.get('/subscription/history');
     return response.data.data;
   },
 };

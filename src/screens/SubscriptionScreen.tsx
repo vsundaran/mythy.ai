@@ -89,7 +89,7 @@ const PlanCard = ({ plan, isSelected, onPress }: PlanCardProps) => {
 const SubscriptionScreen = () => {
   const insets = useSafeAreaInsets();
   const { theme } = useUnistyles();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const { showAlert } = useCustomAlert();
   const [selectedPlanId, setSelectedPlanId] = useState('6months');
   const [plans, setPlans] = useState<any[]>([]);
@@ -212,9 +212,13 @@ const SubscriptionScreen = () => {
         </TouchableOpacity>
 
         <Box mt={20}>
-          <Text style={styles.headerTitle}>
-            Join <Text style={styles.highlightText}>Premium</Text> now!
-          </Text>
+          <HStack alignItems="center" space="xs" flexWrap="wrap">
+            <Text style={styles.headerTitle}>Join</Text>
+            <Box style={styles.premiumChip}>
+              <Text style={styles.premiumChipText}>Premium</Text>
+            </Box>
+            <Text style={styles.headerTitle}>now!</Text>
+          </HStack>
           <Text style={styles.headerSubtitle}>
             Start saving big by choosing the subscription package that fits your needs
           </Text>
@@ -276,7 +280,29 @@ const styles = StyleSheet.create((theme) => ({
     color: COLORS.primaryYellow,
     fontSize: 28,
     fontWeight: '700',
-    
+  },
+  premiumChip: {
+    backgroundColor: COLORS.primaryYellow,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+    marginHorizontal: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    transform: [{ rotate: '-2deg' }], // Subtle tilt for a premium, dynamic look
+    shadowColor: COLORS.primaryYellow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  premiumChipText: {
+    color: '#000000',
+    fontSize: 20,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontFamily: theme.typography.fontFamily.primary,
   },
   headerSubtitle: {
     fontSize: 15,

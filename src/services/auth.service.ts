@@ -11,6 +11,7 @@ interface AuthResponse {
       name: string;
       email: string;
       avatar?: string;
+      credits: number;
     };
     accessToken: string;
     refreshToken: string;
@@ -73,5 +74,52 @@ export const updateUserName = async (name: string) => {
       data: null,
       error: { reason: 'Could not connect to server' },
     };
+  }
+};
+
+export const getCreditHistory = async () => {
+  try {
+    const response = await api.get('/auth/credits/history');
+    return response.data;
+  } catch (error: any) {
+    if (error.response) {
+      return error.response.data;
+    }
+    return {
+      success: false,
+      message: 'Network error',
+      data: null,
+      error: { reason: 'Could not connect to server' },
+    };
+  }
+};
+
+export const requestAccountDeletion = async () => {
+  try {
+    const response = await api.post('/auth/account/request-deletion');
+    return response.data;
+  } catch (error: any) {
+    if (error.response) return error.response.data;
+    return { success: false, message: 'Network error' };
+  }
+};
+
+export const confirmAccountDeletion = async () => {
+  try {
+    const response = await api.post('/auth/account/confirm-deletion');
+    return response.data;
+  } catch (error: any) {
+    if (error.response) return error.response.data;
+    return { success: false, message: 'Network error' };
+  }
+};
+
+export const cancelAccountDeletion = async () => {
+  try {
+    const response = await api.post('/auth/account/cancel-deletion');
+    return response.data;
+  } catch (error: any) {
+    if (error.response) return error.response.data;
+    return { success: false, message: 'Network error' };
   }
 };
