@@ -20,8 +20,8 @@ export const useSendChatMessage = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ question, chatId }: { question: string; chatId?: string }) =>
-      sendChatMessage(question, chatId),
+    mutationFn: ({ question, chatId, isAuthentic, category }: { question: string; chatId?: string; isAuthentic?: boolean; category?: string }) =>
+      sendChatMessage(question, chatId, isAuthentic, category),
     onSuccess: (data, variables) => {
       // Invalidate the chat list so it reflects the new updated time / last message
       queryClient.invalidateQueries({ queryKey: ['chats'] });

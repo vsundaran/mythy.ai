@@ -85,7 +85,7 @@ const ChatLandingScreen = () => {
 
     return (
       
-      <Pressable style={styles.storyContainer} onPress={() => navigation.navigate('Subscription')}>
+      <Pressable style={styles.storyContainer} onPress={() => navigation.navigate('ChatInterface', { isAuthentic: true, category: item.title, categoryIcon: item.iconName })}>
         <Box style={styles.storyRing}>
           <Box style={styles.iconWrapper}>
             {/* <IconPlaceHolder width={64} height={64} style={{ position: 'absolute' }} /> */}

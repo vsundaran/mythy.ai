@@ -22,13 +22,15 @@ export interface IChat {
   title: string;
   userId: string;
   categoryIcon?: string;
+  isAuthentic?: boolean;
+  category?: string;
   messages: IMessage[];
   createdAt: string;
   updatedAt: string;
 }
 
-export const sendChatMessage = async (question: string, chatId?: string): Promise<IChat> => {
-  const response = await api.post('/chat', { question, chatId });
+export const sendChatMessage = async (question: string, chatId?: string, isAuthentic?: boolean, category?: string): Promise<IChat> => {
+  const response = await api.post('/chat', { question, chatId, isAuthentic, category });
   if (response.data.success) {
     return response.data.data;
   }

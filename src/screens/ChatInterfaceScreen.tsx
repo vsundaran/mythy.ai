@@ -57,6 +57,10 @@ const ChatInterfaceScreen = () => {
   const navigation = useNavigation<any>();
   const inputRef = useRef<TextInput>(null);
 
+  const isAuthenticChat = route.params?.isAuthentic || chatDetails?.isAuthentic;
+  const categoryName = route.params?.category || chatDetails?.category;
+
+
   // ── Keyboard visibility tracking ──────────────────────────────────────────
   useEffect(() => {
     // Use keyboardWillShow/Hide on iOS for sync with animation;
@@ -100,7 +104,12 @@ const ChatInterfaceScreen = () => {
     setMessages(prev => GiftedChat.append(prev, [userMsg]));
     
     try {
-      const apiResponse = await sendMessage({ question: userMsg.text, chatId: currentChatId });
+      const apiResponse = await sendMessage({ 
+        question: userMsg.text, 
+        chatId: currentChatId,
+        isAuthentic: isAuthenticChat,
+        category: categoryName
+      });
       
       // ... same logic ...
       const lastMessage = apiResponse.messages[apiResponse.messages.length - 1];
@@ -169,16 +178,22 @@ const ChatInterfaceScreen = () => {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
 
+    // Reset times to midnight for accurate comparison
+    date.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    yesterday.setHours(0, 0, 0, 0);
+
     let dateString = '';
-    if (date.toDateString() === today.toDateString()) {
+    if (date.getTime() === today.getTime()) {
       dateString = 'Today';
-    } else if (date.toDateString() === yesterday.toDateString()) {
+    } else if (date.getTime() === yesterday.getTime()) {
       dateString = 'Yesterday';
     } else {
       const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const month = months[date.getMonth()];
       const year = date.getFullYear();
-      dateString = `${day}, ${month}, ${year}`;
+      dateString = `${day} ${month} ${year}`;
     }
 
     return (
@@ -442,7 +457,14 @@ const ChatInterfaceScreen = () => {
 
             <Box marginLeft={12}>
               <Text style={styles.headerTitle}>Mr Mythy</Text>
-              <Text style={styles.headerSubtitle}>Online</Text>
+              <HStack alignItems="center" space="xs" marginTop={2}>
+                <Text style={styles.headerSubtitle}>Online</Text>
+                {isAuthenticChat && (
+                  <Box backgroundColor="rgba(255, 213, 79, 0.2)" paddingHorizontal={6} paddingVertical={2} borderRadius={8}>
+                    <Text color="#FFD54F" fontSize={10} fontWeight="700">Authentic • {categoryName}</Text>
+                  </Box>
+                )}
+              </HStack>
             </Box>
           </HStack>
         </HStack>
@@ -464,13 +486,8 @@ const ChatInterfaceScreen = () => {
       ──────────────────────────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        /**
-         * 'padding' on iOS: KAV adds keyboard height as bottom padding,
-         *   pushing the content up in sync with the keyboard slide.
-         * 'height' on Android: shrinks the view height instead (more
-         *   reliable than 'padding' on Android).
-         */
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 90 : 0}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Box style={styles.chatAreaContainer}>
           {isLoading && messages.length === 0 ? (
             <Box flex={1} alignItems="center" justifyContent="center">

@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/useAuthStore';
 // Update with your local IP or backend URL
 // const BASE_URL = 'https://app-mythy-api-prod-ins.azurewebsites.net/api/v1'; 
 // const BASE_URL = 'https://asp-mythy-api-prod-uaen.azurewebsites.net/api/v1';
-const BASE_URL = 'http://192.168.1.38:5001/api/v1';
+const BASE_URL = 'http://172.20.10.12:5001/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
