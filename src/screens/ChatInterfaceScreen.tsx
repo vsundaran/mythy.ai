@@ -11,8 +11,20 @@ import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { GiftedChat, Bubble, IMessage } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
-import { MoreVertical, Play, Send as SendIcon, ExternalLink } from 'lucide-react-native';
-import { Box, HStack, Image, Text, Spinner, Pressable } from '@gluestack-ui/themed';
+import {
+  MoreVertical,
+  Play,
+  Send as SendIcon,
+  ExternalLink,
+} from 'lucide-react-native';
+import {
+  Box,
+  HStack,
+  Image,
+  Text,
+  Spinner,
+  Pressable,
+} from '@gluestack-ui/themed';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { ISource } from '../services/chat.service';
 import { useChatDetails, useSendChatMessage } from '../hooks/useChats';
@@ -23,8 +35,15 @@ import { AiBrain04Icon } from '@hugeicons/core-free-icons';
 
 // ─── Waveform component for audio bubbles ─────────────────────────────────────
 const Waveform = () => (
-  <HStack alignItems="center" height={24} style={{ gap: 2, paddingHorizontal: 8 }}>
-    {[4, 8, 12, 16, 20, 16, 12, 8, 4, 6, 10, 14, 18, 14, 10, 8, 6, 4, 4, 4, 3, 3].map((h, i) => (
+  <HStack
+    alignItems="center"
+    height={24}
+    style={{ gap: 2, paddingHorizontal: 8 }}
+  >
+    {[
+      4, 8, 12, 16, 20, 16, 12, 8, 4, 6, 10, 14, 18, 14, 10, 8, 6, 4, 4, 4, 3,
+      3,
+    ].map((h, i) => (
       <Box
         key={i}
         width={3}
@@ -40,13 +59,18 @@ const Waveform = () => (
 const ChatInterfaceScreen = () => {
   const [messages, setMessages] = useState<IMessage[]>([]);
   const [inputText, setInputText] = useState('');
-  const [currentChatId, setCurrentChatId] = useState<string | undefined>(undefined);
+  const [currentChatId, setCurrentChatId] = useState<string | undefined>(
+    undefined,
+  );
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [isSourceModalVisible, setIsSourceModalVisible] = useState(false);
   const [modalSources, setModalSources] = useState<ISource[]>([]);
 
-  const { data: chatDetails, isLoading: isChatLoading } = useChatDetails(currentChatId || '');
-  const { mutateAsync: sendMessage, isPending: isSending } = useSendChatMessage();
+  const { data: chatDetails, isLoading: isChatLoading } = useChatDetails(
+    currentChatId || '',
+  );
+  const { mutateAsync: sendMessage, isPending: isSending } =
+    useSendChatMessage();
 
   const isLoading = isChatLoading || isSending;
 
@@ -60,16 +84,21 @@ const ChatInterfaceScreen = () => {
   const isAuthenticChat = route.params?.isAuthentic || chatDetails?.isAuthentic;
   const categoryName = route.params?.category || chatDetails?.category;
 
-
   // ── Keyboard visibility tracking ──────────────────────────────────────────
   useEffect(() => {
     // Use keyboardWillShow/Hide on iOS for sync with animation;
     // keyboardDidShow/Hide on Android (only "Did" events are reliable there).
-    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showEvent =
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent =
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    const showSub = Keyboard.addListener(showEvent, () =>
+      setKeyboardVisible(true),
+    );
+    const hideSub = Keyboard.addListener(hideEvent, () =>
+      setKeyboardVisible(false),
+    );
 
     return () => {
       showSub.remove();
@@ -99,62 +128,70 @@ const ChatInterfaceScreen = () => {
   }, [chatDetails]);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
-  const onSend = useCallback(async (newMessages: IMessage[] = []) => {
-    const userMsg = newMessages[0];
-    setMessages(prev => GiftedChat.append(prev, [userMsg]));
-    
-    try {
-      const apiResponse = await sendMessage({ 
-        question: userMsg.text, 
-        chatId: currentChatId,
-        isAuthentic: isAuthenticChat,
-        category: categoryName
-      });
-      
-      // ... same logic ...
-      const lastMessage = apiResponse.messages[apiResponse.messages.length - 1];
-      
-      const aiMsg: any = {
-        _id: lastMessage._id || Math.random().toString(),
-        text: lastMessage.content,
-        createdAt: new Date(lastMessage.createdAt),
-        user: { _id: 2, name: 'Mr Mythy' },
-        aiResponse: lastMessage.metadata || {},
-      };
+  const onSend = useCallback(
+    async (newMessages: IMessage[] = []) => {
+      const userMsg = newMessages[0];
+      setMessages(prev => GiftedChat.append(prev, [userMsg]));
 
-      if (!currentChatId) {
-        setCurrentChatId(apiResponse.chatId);
-      }
+      try {
+        const apiResponse = await sendMessage({
+          question: userMsg.text,
+          chatId: currentChatId,
+          isAuthentic: isAuthenticChat,
+          category: categoryName,
+        });
 
-      setMessages(prev => GiftedChat.append(prev, [aiMsg]));
-    } catch (error: any) {
-      console.error('Chat error:', error);
-      
-      // Check for insufficient credits
-      if (error.message === 'INSUFFICIENT_CREDITS' || error?.response?.data?.message === 'INSUFFICIENT_CREDITS') {
-        showAlert({
-          title: 'Out of Credits',
-          message: 'You have exhausted your credits for this month. Please upgrade your plan to continue myth-busting!',
-          buttons: [
-            { text: 'Cancel', style: 'cancel' },
-            { 
-              text: 'Upgrade Now', 
-              onPress: () => navigation.navigate('Subscription'),
-              style: 'default'
-            }
-          ]
-        });
-      } else {
-        showAlert({ 
-          title: 'Error', 
-          message: 'Failed to get a response from Mr Mythy' 
-        });
+        // ... same logic ...
+        const lastMessage =
+          apiResponse.messages[apiResponse.messages.length - 1];
+
+        const aiMsg: any = {
+          _id: lastMessage._id || Math.random().toString(),
+          text: lastMessage.content,
+          createdAt: new Date(lastMessage.createdAt),
+          user: { _id: 2, name: 'Mr Mythy' },
+          aiResponse: lastMessage.metadata || {},
+        };
+
+        if (!currentChatId) {
+          setCurrentChatId(apiResponse.chatId);
+        }
+
+        setMessages(prev => GiftedChat.append(prev, [aiMsg]));
+      } catch (error: any) {
+        console.error('Chat error:', error);
+
+        // Check for insufficient credits
+        if (
+          error.message === 'INSUFFICIENT_CREDITS' ||
+          error?.response?.data?.message === 'INSUFFICIENT_CREDITS'
+        ) {
+          showAlert({
+            title: 'Out of Credits',
+            message:
+              'You have exhausted your credits for this month. Please upgrade your plan to continue myth-busting!',
+            buttons: [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Upgrade Now',
+                onPress: () => navigation.navigate('Subscription'),
+                style: 'default',
+              },
+            ],
+          });
+        } else {
+          showAlert({
+            title: 'Error',
+            message: 'Failed to get a response from Mr Mythy',
+          });
+        }
+
+        // Remove the user's message if it failed
+        setMessages(prev => prev.filter(m => m._id !== userMsg._id));
       }
-      
-      // Remove the user's message if it failed
-      setMessages(prev => prev.filter(m => m._id !== userMsg._id));
-    }
-  }, [currentChatId, sendMessage]);
+    },
+    [currentChatId, sendMessage],
+  );
 
   const handleSend = () => {
     if (inputText.trim().length === 0 || isLoading) return;
@@ -190,7 +227,20 @@ const ChatInterfaceScreen = () => {
       dateString = 'Yesterday';
     } else {
       const day = String(date.getDate()).padStart(2, '0');
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
       const month = months[date.getMonth()];
       const year = date.getFullYear();
       dateString = `${day} ${month} ${year}`;
@@ -198,16 +248,16 @@ const ChatInterfaceScreen = () => {
 
     return (
       <Box alignItems="center" marginVertical={12}>
-        <Box 
-          backgroundColor="#F3F4F6" 
-          paddingHorizontal={12} 
-          paddingVertical={4} 
+        <Box
+          backgroundColor="#F3F4F6"
+          paddingHorizontal={12}
+          paddingVertical={4}
           borderRadius={16}
         >
-          <Text 
-            fontSize={12} 
-            color="#6B7280" 
-            fontWeight="600" 
+          <Text
+            fontSize={12}
+            color="#6B7280"
+            fontWeight="600"
             fontFamily={theme.typography.fontFamily.primary}
           >
             {dateString}
@@ -225,36 +275,39 @@ const ChatInterfaceScreen = () => {
 
     const getChipStyles = (result: string) => {
       switch (result) {
-        case 'True': 
-          return { 
-            bg: '#DAF7E1', 
-            primary: '#14603B', 
-            label: 'TRUE' 
+        case 'True':
+          return {
+            bg: '#DAF7E1',
+            primary: '#14603B',
+            label: 'TRUE',
           };
-        case 'False': 
-          return { 
-            bg: '#FEE2E2', 
-            primary: '#B91C1C', 
-            label: 'FALSE' 
+        case 'False':
+          return {
+            bg: '#FEE2E2',
+            primary: '#B91C1C',
+            label: 'FALSE',
           };
-        case 'Misleading': 
-          return { 
-            bg: '#FEF3C7', 
-            primary: '#B45309', 
-            label: 'MISLEADING' 
+        case 'Misleading':
+          return {
+            bg: '#FEF3C7',
+            primary: '#B45309',
+            label: 'MISLEADING',
           };
-        default: 
-          return { 
-            bg: '#F3F4F6', 
-            primary: '#4B5563', 
-            label: result.toUpperCase() 
+        default:
+          return {
+            bg: '#F3F4F6',
+            primary: '#4B5563',
+            label: result.toUpperCase(),
           };
       }
     };
 
     const handleSourcePress = (sources: ISource[]) => {
       if (sources.length === 1) {
-        navigation.navigate('Proof', { url: sources[0].url, title: sources[0].title });
+        navigation.navigate('Proof', {
+          url: sources[0].url,
+          title: sources[0].title,
+        });
       } else {
         setModalSources(sources);
         setIsSourceModalVisible(true);
@@ -266,10 +319,10 @@ const ChatInterfaceScreen = () => {
         {isAi && aiResponse && aiResponse.result && (
           <Box paddingHorizontal={12} marginBottom={8}>
             <HStack space="md" alignItems="center">
-              <HStack 
-                backgroundColor={getChipStyles(aiResponse.result).bg} 
-                paddingHorizontal={12} 
-                paddingVertical={6} 
+              <HStack
+                backgroundColor={getChipStyles(aiResponse.result).bg}
+                paddingHorizontal={12}
+                paddingVertical={6}
                 borderRadius={20}
                 borderWidth={1}
                 borderColor={getChipStyles(aiResponse.result).primary}
@@ -277,33 +330,37 @@ const ChatInterfaceScreen = () => {
                 style={{ gap: 8 }}
               >
                 {/* Status Dot */}
-                <Box 
-                  width={8} 
-                  height={8} 
-                  borderRadius={4} 
-                  backgroundColor={getChipStyles(aiResponse.result).primary} 
+                <Box
+                  width={8}
+                  height={8}
+                  borderRadius={4}
+                  backgroundColor={getChipStyles(aiResponse.result).primary}
                 />
-                <Text 
-                  color={getChipStyles(aiResponse.result).primary} 
-                  fontWeight="700" 
-                  fontSize={12} 
+                <Text
+                  color={getChipStyles(aiResponse.result).primary}
+                  fontWeight="700"
+                  fontSize={12}
                   style={{ letterSpacing: 0.5 }}
                 >
                   {getChipStyles(aiResponse.result).label}
                 </Text>
               </HStack>
               {aiResponse.sources?.length > 0 && (
-                <TouchableOpacity onPress={() => handleSourcePress(aiResponse.sources)}>
-                  <HStack 
-                    space="xs" 
-                    alignItems="center" 
-                    backgroundColor="#F3F4F6" 
-                    paddingHorizontal={10} 
-                    paddingVertical={4} 
+                <TouchableOpacity
+                  onPress={() => handleSourcePress(aiResponse.sources)}
+                >
+                  <HStack
+                    space="xs"
+                    alignItems="center"
+                    backgroundColor="#F3F4F6"
+                    paddingHorizontal={10}
+                    paddingVertical={4}
                     borderRadius={16}
                   >
                     <ExternalLink size={12} color="#6B7280" />
-                    <Text color="#6B7280" fontSize={12}>Sources</Text>
+                    <Text color="#6B7280" fontSize={12}>
+                      Sources
+                    </Text>
                   </HStack>
                 </TouchableOpacity>
               )}
@@ -355,8 +412,14 @@ const ChatInterfaceScreen = () => {
             width={40}
             height={40}
             alignItems="center"
-            justifyContent="center">
-            <Play fill="#FCFCFC" color="#FCFCFC" size={20} style={{ marginLeft: 3 }} />
+            justifyContent="center"
+          >
+            <Play
+              fill="#FCFCFC"
+              color="#FCFCFC"
+              size={20}
+              style={{ marginLeft: 3 }}
+            />
           </Box>
           <Waveform />
         </HStack>
@@ -383,7 +446,8 @@ const ChatInterfaceScreen = () => {
         paddingHorizontal={16}
         paddingTop={12}
         // Dynamic bottom padding — avoids gap above keyboard AND respects home indicator
-        style={{ paddingBottom: bottomPadding }}>
+        style={{ paddingBottom: bottomPadding }}
+      >
         <HStack
           borderRadius={30}
           borderWidth={1}
@@ -392,9 +456,8 @@ const ChatInterfaceScreen = () => {
           alignItems="center"
           paddingLeft={16}
           paddingRight={4}
-          paddingVertical={4}>
-
-
+          paddingVertical={4}
+        >
           <TextInput
             ref={inputRef}
             style={styles.textInput}
@@ -407,9 +470,11 @@ const ChatInterfaceScreen = () => {
             blurOnSubmit={false}
           />
 
-
-
-          <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isLoading}>
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={handleSend}
+            disabled={isLoading}
+          >
             {isLoading ? (
               <Spinner color="#000" size="small" />
             ) : (
@@ -426,9 +491,14 @@ const ChatInterfaceScreen = () => {
     <ImageBackground
       source={require('../assets/icons_background.png')}
       style={styles.container}
-      imageStyle={{ opacity: 1 }}>
+      imageStyle={{ opacity: 1 }}
+    >
       {/* Dark overlay */}
-      <Box style={StyleSheet.absoluteFillObject} backgroundColor="#1B1B1B" opacity={0.9} />
+      <Box
+        style={StyleSheet.absoluteFillObject}
+        backgroundColor="#1B1B1B"
+        opacity={0.9}
+      />
 
       <StatusBar barStyle="light-content" />
 
@@ -436,7 +506,11 @@ const ChatInterfaceScreen = () => {
           Lives OUTSIDE the KeyboardAvoidingView so it stays perfectly
           anchored at the top and is never shifted by the keyboard.
       ──────────────────────────────────────────────────────────────────────── */}
-      <Box paddingTop={insets.top + 16} paddingBottom={20} paddingHorizontal={16}>
+      <Box
+        paddingTop={insets.top + 16}
+        paddingBottom={20}
+        paddingHorizontal={16}
+      >
         <HStack alignItems="center" justifyContent="space-between">
           <HStack alignItems="center">
             <Box
@@ -445,7 +519,8 @@ const ChatInterfaceScreen = () => {
               borderRadius={24}
               backgroundColor="#FFD54F"
               alignItems="center"
-              justifyContent="center">
+              justifyContent="center"
+            >
               <HugeiconsIcon icon={AiBrain04Icon} size={32} color="#000000ff" />
               {/* <Image
                 source={require('../assets/logo.png')}
@@ -460,8 +535,15 @@ const ChatInterfaceScreen = () => {
               <HStack alignItems="center" space="xs" marginTop={2}>
                 <Text style={styles.headerSubtitle}>Online</Text>
                 {isAuthenticChat && (
-                  <Box backgroundColor="rgba(255, 213, 79, 0.2)" paddingHorizontal={6} paddingVertical={2} borderRadius={8}>
-                    <Text color="#FFD54F" fontSize={10} fontWeight="700">Authentic • {categoryName}</Text>
+                  <Box
+                    backgroundColor="rgba(255, 213, 79, 0.2)"
+                    paddingHorizontal={6}
+                    paddingVertical={2}
+                    borderRadius={8}
+                  >
+                    <Text color="#FFD54F" fontSize={10} fontWeight="700">
+                      Authentic • {categoryName}
+                    </Text>
                   </Box>
                 )}
               </HStack>
@@ -486,18 +568,21 @@ const ChatInterfaceScreen = () => {
       ──────────────────────────────────────────────────────────────────────── */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 90 : 0}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        keyboardVerticalOffset={insets.top}
+        behavior="padding"
+      >
         <Box style={styles.chatAreaContainer}>
           {isLoading && messages.length === 0 ? (
             <Box flex={1} alignItems="center" justifyContent="center">
               <Spinner color="#FFD54F" size="large" />
-              <Text marginTop={12} color="#6B7280">Loading conversation...</Text>
+              <Text marginTop={12} color="#6B7280">
+                Loading conversation...
+              </Text>
             </Box>
           ) : (
             <GiftedChat
               messages={messages}
-              onSend={(newMessages) => onSend(newMessages)}
+              onSend={newMessages => onSend(newMessages)}
               user={{ _id: 1 }}
               renderAvatar={() => null}
               renderDay={renderDay}
@@ -531,9 +616,27 @@ const ChatInterfaceScreen = () => {
         swipeDirection={['down']}
         style={{ justifyContent: 'flex-end', margin: 0 }}
       >
-        <Box backgroundColor="#1C1C1C" borderTopLeftRadius={24} borderTopRightRadius={24} padding={24}>
-          <Box width={40} height={4} backgroundColor="#333" borderRadius={2} alignSelf="center" marginBottom={24} />
-          <Text fontSize={20} fontWeight="700" color="#FFF" fontFamily={theme.typography.fontFamily.primary} marginBottom={16}>
+        <Box
+          backgroundColor="#1C1C1C"
+          borderTopLeftRadius={24}
+          borderTopRightRadius={24}
+          padding={24}
+        >
+          <Box
+            width={40}
+            height={4}
+            backgroundColor="#333"
+            borderRadius={2}
+            alignSelf="center"
+            marginBottom={24}
+          />
+          <Text
+            fontSize={20}
+            fontWeight="700"
+            color="#FFF"
+            fontFamily={theme.typography.fontFamily.primary}
+            marginBottom={16}
+          >
             Select Source
           </Text>
           {modalSources.map((source, index) => (
@@ -542,17 +645,24 @@ const ChatInterfaceScreen = () => {
               onPress={() => {
                 setIsSourceModalVisible(false);
                 setTimeout(() => {
-                  navigation.navigate('Proof', { url: source.url, title: source.title });
+                  navigation.navigate('Proof', {
+                    url: source.url,
+                    title: source.title,
+                  });
                 }, 300);
               }}
               style={{
                 paddingVertical: 16,
                 borderBottomWidth: index === modalSources.length - 1 ? 0 : 1,
-                borderBottomColor: '#333'
+                borderBottomColor: '#333',
               }}
             >
               <HStack alignItems="center" justifyContent="space-between">
-                <Text color="#D1D5DB" fontSize={16} fontFamily={theme.typography.fontFamily.primary}>
+                <Text
+                  color="#D1D5DB"
+                  fontSize={16}
+                  fontFamily={theme.typography.fontFamily.primary}
+                >
                   {source.title}
                 </Text>
                 <ExternalLink size={16} color="#FFD54F" />
@@ -562,13 +672,12 @@ const ChatInterfaceScreen = () => {
           <Box height={insets.bottom + 16} />
         </Box>
       </ReactNativeModal>
-
     </ImageBackground>
   );
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create((theme) => ({
+const styles = StyleSheet.create(theme => ({
   container: {
     flex: 1,
     backgroundColor: '#1E1E1E',

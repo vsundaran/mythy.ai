@@ -5,6 +5,7 @@ import {
   ScrollView,
   StatusBar,
   Dimensions,
+  DeviceEventEmitter,
 } from 'react-native';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import { subscriptionService } from '../services/subscription.service';
 import { ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCustomAlert } from '../context/AlertContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 const { width } = Dimensions.get('window');
 
@@ -95,6 +97,7 @@ const SubscriptionScreen = () => {
   const [plans, setPlans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     fetchPlans();
@@ -129,17 +132,85 @@ const SubscriptionScreen = () => {
     }
   };
 
+  const processedRef = React.useRef(false);
+
+  useEffect(() => {
+    // Listen for Razorpay success/error events manually since the Promise hangs on some Android versions
+    const successSub = DeviceEventEmitter.addListener('Razorpay::PAYMENT_SUCCESS', (data) => {
+      console.log('[Subscription] Native Event Success:', data);
+      handlePaymentResponse(data, true);
+    });
+
+    const errorSub = DeviceEventEmitter.addListener('Razorpay::PAYMENT_ERROR', (data) => {
+      console.log('[Subscription] Native Event Error:', data);
+      handlePaymentResponse(data, false);
+    });
+
+    return () => {
+      successSub.remove();
+      errorSub.remove();
+    };
+  }, []);
+
+  const handlePaymentResponse = async (data: any, isSuccess: boolean) => {
+    if (processedRef.current) return;
+    processedRef.current = true;
+    
+    if (isSuccess) {
+      try {
+        console.log('[Subscription] Verifying payment after native success event...');
+        await subscriptionService.verifyPayment({
+          razorpayOrderId: data.razorpay_order_id || data.order_id,
+          razorpayPaymentId: data.razorpay_payment_id || data.payment_id,
+          razorpaySignature: data.razorpay_signature || data.signature,
+        });
+        
+        setIsLoading(false);
+        queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+        
+        showAlert({ 
+          title: 'Success', 
+          message: 'Subscription activated successfully!',
+          buttons: [{ 
+            text: 'Great!', 
+            onPress: () => {
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainTabs' }],
+              });
+            } 
+          }]
+        });
+      } catch (err: any) {
+        setIsLoading(false);
+        processedRef.current = false;
+        console.error('[Subscription] Verification Error:', err);
+        showAlert({ title: 'Error', message: 'Payment verification failed.' });
+      }
+    } else {
+      setIsLoading(false);
+      processedRef.current = false;
+      if (data.code !== 2) {
+        showAlert({ 
+          title: 'Payment Failed', 
+          message: data.description || 'Something went wrong.' 
+        });
+      }
+    }
+  };
+
   const handlePayment = async () => {
     if (isLoading) return;
     setIsLoading(true);
+    processedRef.current = false;
 
     try {
-      // 1. Create Order on Backend
+      console.log('[Subscription] Creating order for:', selectedPlanId);
       const orderData = await subscriptionService.createOrder(selectedPlanId);
       
       const options = {
         description: `Subscription for ${selectedPlanId}`,
-        image: 'https://i.imgur.com/3g7nmJC.png', // Fallback icon
+        image: 'https://i.imgur.com/3g7nmJC.png',
         currency: orderData.currency,
         key: orderData.key,
         amount: orderData.amount,
@@ -153,44 +224,17 @@ const SubscriptionScreen = () => {
         theme: { color: COLORS.primaryYellow },
       };
 
-      // 2. Open Razorpay Checkout
-      RazorpayCheckout.open(options)
-        .then(async (data: any) => {
-          // 3. Verify Payment on Backend
-          try {
-            await subscriptionService.verifyPayment({
-              razorpayOrderId: data.razorpay_order_id,
-              razorpayPaymentId: data.razorpay_payment_id,
-              razorpaySignature: data.razorpay_signature,
-            });
-            showAlert({ 
-              title: 'Success', 
-              message: 'Subscription activated successfully!',
-              buttons: [{ text: 'Great!', onPress: () => navigation.navigate('ChatLanding') }]
-            });
-          } catch (verifyError) {
-            console.error('Verification failed', verifyError);
-            showAlert({ 
-              title: 'Error', 
-              message: 'Payment verification failed. Please contact support.' 
-            });
-          } finally {
-            setIsLoading(false);
-          }
-        })
-        .catch((error: any) => {
-          setIsLoading(false);
-          console.log('Razorpay Error: ', error);
-          if (error.code !== 2) { // 2 is user cancelled
-             showAlert({ 
-               title: 'Error', 
-               message: `Payment failed: ${error.description}` 
-             });
-          }
-        });
+      console.log('[Subscription] Calling RazorpayCheckout.open');
+      // We don't await the promise here because it hangs on Android.
+      // The useEffect listeners above will catch the response.
+      RazorpayCheckout.open(options).catch(err => {
+        console.log('[Subscription] Promise Catch (expected on cancel/error):', err);
+        handlePaymentResponse(err, false);
+      });
+      
     } catch (error: any) {
       setIsLoading(false);
-      console.error('Order creation failed', error);
+      console.error('[Subscription] Order Creation Error:', error);
       showAlert({ 
         title: 'Error', 
         message: 'Failed to initiate payment. Please try again.' 

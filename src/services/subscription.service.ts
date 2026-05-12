@@ -36,6 +36,7 @@ export const subscriptionService = {
     razorpayPaymentId: string;
     razorpaySignature: string;
   }) => {
+    console.log('[SubscriptionService] Calling /verify-payment with:', paymentData);
     const response = await api.post('/subscription/verify-payment', paymentData);
     return response.data.data;
   },
