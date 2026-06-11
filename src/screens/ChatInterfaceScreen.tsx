@@ -273,32 +273,20 @@ const ChatInterfaceScreen = () => {
     const isAi = currentMessage.user?._id === 2;
     const aiResponse = currentMessage.aiResponse;
 
+    // Returns null for intent types that should not render a verification chip
     const getChipStyles = (result: string) => {
       switch (result) {
         case 'True':
-          return {
-            bg: '#DAF7E1',
-            primary: '#14603B',
-            label: 'TRUE',
-          };
+          return { bg: '#DAF7E1', primary: '#14603B', label: 'TRUE' };
         case 'False':
-          return {
-            bg: '#FEE2E2',
-            primary: '#B91C1C',
-            label: 'FALSE',
-          };
+          return { bg: '#FEE2E2', primary: '#B91C1C', label: 'FALSE' };
         case 'Misleading':
-          return {
-            bg: '#FEF3C7',
-            primary: '#B45309',
-            label: 'MISLEADING',
-          };
+          return { bg: '#FEF3C7', primary: '#B45309', label: 'MISLEADING' };
+        case 'Factual':
+          return { bg: '#EFF6FF', primary: '#1D4ED8', label: 'FACT' };
+        case 'General':
         default:
-          return {
-            bg: '#F3F4F6',
-            primary: '#4B5563',
-            label: result.toUpperCase(),
-          };
+          return null;
       }
     };
 
@@ -316,57 +304,60 @@ const ChatInterfaceScreen = () => {
 
     return (
       <Box style={{ marginBottom: 8 }}>
-        {isAi && aiResponse && aiResponse.result && (
-          <Box paddingHorizontal={12} marginBottom={8}>
-            <HStack space="md" alignItems="center">
-              <HStack
-                backgroundColor={getChipStyles(aiResponse.result).bg}
-                paddingHorizontal={12}
-                paddingVertical={6}
-                borderRadius={20}
-                borderWidth={1}
-                borderColor={getChipStyles(aiResponse.result).primary}
-                alignItems="center"
-                style={{ gap: 8 }}
-              >
-                {/* Status Dot */}
-                <Box
-                  width={8}
-                  height={8}
-                  borderRadius={4}
-                  backgroundColor={getChipStyles(aiResponse.result).primary}
-                />
-                <Text
-                  color={getChipStyles(aiResponse.result).primary}
-                  fontWeight="700"
-                  fontSize={12}
-                  style={{ letterSpacing: 0.5 }}
+        {isAi && aiResponse && aiResponse.result && (() => {
+          const chip = getChipStyles(aiResponse.result);
+          if (!chip) return null;
+          return (
+            <Box paddingHorizontal={12} marginBottom={8}>
+              <HStack space="md" alignItems="center">
+                <HStack
+                  backgroundColor={chip.bg}
+                  paddingHorizontal={12}
+                  paddingVertical={6}
+                  borderRadius={20}
+                  borderWidth={1}
+                  borderColor={chip.primary}
+                  alignItems="center"
+                  style={{ gap: 8 }}
                 >
-                  {getChipStyles(aiResponse.result).label}
-                </Text>
-              </HStack>
-              {aiResponse.sources?.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => handleSourcePress(aiResponse.sources)}
-                >
-                  <HStack
-                    space="xs"
-                    alignItems="center"
-                    backgroundColor="#F3F4F6"
-                    paddingHorizontal={10}
-                    paddingVertical={4}
-                    borderRadius={16}
+                  <Box
+                    width={8}
+                    height={8}
+                    borderRadius={4}
+                    backgroundColor={chip.primary}
+                  />
+                  <Text
+                    color={chip.primary}
+                    fontWeight="700"
+                    fontSize={12}
+                    style={{ letterSpacing: 0.5 }}
                   >
-                    <ExternalLink size={12} color="#6B7280" />
-                    <Text color="#6B7280" fontSize={12}>
-                      Sources
-                    </Text>
-                  </HStack>
-                </TouchableOpacity>
-              )}
-            </HStack>
-          </Box>
-        )}
+                    {chip.label}
+                  </Text>
+                </HStack>
+                {aiResponse.sources?.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => handleSourcePress(aiResponse.sources)}
+                  >
+                    <HStack
+                      space="xs"
+                      alignItems="center"
+                      backgroundColor="#F3F4F6"
+                      paddingHorizontal={10}
+                      paddingVertical={4}
+                      borderRadius={16}
+                    >
+                      <ExternalLink size={12} color="#6B7280" />
+                      <Text color="#6B7280" fontSize={12}>
+                        Sources
+                      </Text>
+                    </HStack>
+                  </TouchableOpacity>
+                )}
+              </HStack>
+            </Box>
+          );
+        })()}
         <Bubble
           {...props}
           renderTime={() => null}
