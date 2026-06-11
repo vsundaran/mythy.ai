@@ -7,7 +7,6 @@ import {
   Platform,
   Keyboard,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { GiftedChat, Bubble, IMessage } from 'react-native-gifted-chat';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StyleSheet, useUnistyles } from 'react-native-unistyles';
@@ -63,6 +62,7 @@ const ChatInterfaceScreen = () => {
     undefined,
   );
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const [isSourceModalVisible, setIsSourceModalVisible] = useState(false);
   const [modalSources, setModalSources] = useState<ISource[]>([]);
 
@@ -507,6 +507,7 @@ const ChatInterfaceScreen = () => {
           anchored at the top and is never shifted by the keyboard.
       ──────────────────────────────────────────────────────────────────────── */}
       <Box
+        onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}
         paddingTop={insets.top + 16}
         paddingBottom={20}
         paddingHorizontal={16}
@@ -552,61 +553,55 @@ const ChatInterfaceScreen = () => {
         </HStack>
       </Box>
 
-      {/* ── Chat area + KeyboardAvoidingView ──────────────────────────────────
-          KeyboardAvoidingView from react-native-keyboard-controller is used
-          here instead of core RN's version because it syncs with the native
-          keyboard animation frame-perfectly (no layout jump/juggle).
+      {/* ── Chat area ─────────────────────────────────────────────────────────
+          GiftedChat v3+ uses react-native-keyboard-controller internally for
+          its KeyboardAvoidingView. We let GiftedChat own that handler entirely
+          via keyboardAvoidingViewProps — adding an external KAV on top would
+          create two competing handlers and produce the layout jump + day-chip
+          disappearance bug.
 
-          Critically, it wraps ONLY the chat area — not the header above —
-          so only the message list + input bar shift when the keyboard appears.
-
-          GiftedChat's internal keyboard handling is DISABLED via
-          `isKeyboardInternallyHandled={false}` so there is exactly ONE
-          keyboard handler active: this KAV. Without that flag, GiftedChat
-          runs its own KeyboardAvoidingFlatList that conflicts with the outer
-          KAV and produces the "juggling" effect.
+          keyboardVerticalOffset = measured height of the custom header above
+          this container, so GiftedChat's internal KAV knows the exact distance
+          from the screen top to its own top edge.
       ──────────────────────────────────────────────────────────────────────── */}
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={insets.top}
-        behavior="padding"
-      >
-        <Box style={styles.chatAreaContainer}>
-          {isLoading && messages.length === 0 ? (
-            <Box flex={1} alignItems="center" justifyContent="center">
-              <Spinner color="#FFD54F" size="large" />
-              <Text marginTop={12} color="#6B7280">
-                Loading conversation...
-              </Text>
-            </Box>
-          ) : (
-            <GiftedChat
-              messages={messages}
-              onSend={newMessages => onSend(newMessages)}
-              user={{ _id: 1 }}
-              renderAvatar={() => null}
-              renderDay={renderDay}
-              renderBubble={renderBubble}
-              renderInputToolbar={renderInputToolbar}
-              renderCustomView={renderCustomView}
-              // Use 'listProps' as verified in the GiftedChat v3.x source
-              listProps={{
-                // keyboardShouldPersistTaps: 'handled',
-                contentContainerStyle: {
-                  flexGrow: 1,
-                  justifyContent: 'flex-end',
-                },
-                // keyboardDismissMode: 'interactive',
-              }}
-              messagesContainerStyle={{
-                backgroundColor: '#FFFFFF',
-                paddingBottom: 20,
-                paddingTop: 16,
-              }}
-            />
-          )}
-        </Box>
-      </KeyboardAvoidingView>
+      <Box style={styles.chatAreaContainer}>
+        {isLoading && messages.length === 0 ? (
+          <Box flex={1} alignItems="center" justifyContent="center">
+            <Spinner color="#FFD54F" size="large" />
+            <Text marginTop={12} color="#6B7280">
+              Loading conversation...
+            </Text>
+          </Box>
+        ) : (
+          <GiftedChat
+            messages={messages}
+            onSend={newMessages => onSend(newMessages)}
+            user={{ _id: 1 }}
+            renderAvatar={() => null}
+            renderDay={renderDay}
+            renderBubble={renderBubble}
+            renderInputToolbar={renderInputToolbar}
+            renderCustomView={renderCustomView}
+            keyboardAvoidingViewProps={{
+              keyboardVerticalOffset: headerHeight,
+              behavior: Platform.OS === 'ios' ? 'padding' : 'height',
+            }}
+            listProps={{
+              keyboardShouldPersistTaps: 'handled',
+              keyboardDismissMode: 'interactive',
+              contentContainerStyle: {
+                flexGrow: 1,
+                justifyContent: 'flex-end',
+              },
+            }}
+            messagesContainerStyle={{
+              backgroundColor: '#FFFFFF',
+              paddingBottom: 20,
+              paddingTop: 16,
+            }}
+          />
+        )}
+      </Box>
 
       {/* Sources Selection Modal */}
       <ReactNativeModal
